@@ -45,7 +45,10 @@
               <Mic :size="16" class="flex-none" />
               <span class="min-w-0 truncate">{{ narrators.join(" / ") }}</span>
             </div>
-            <DetailHeroFacts :icon="BookAudio" :facts="facts" />
+            <DetailHeroFacts
+              :icon="isAlbumSeries ? Disc : BookAudio"
+              :facts="facts"
+            />
           </div>
 
           <div class="flex min-w-0 items-center">
@@ -69,18 +72,31 @@ import {
 } from "@/helpers/utils";
 import {
   ImageType,
+  MediaType,
+  type Album,
   type Audiobook,
   type MediaCollection,
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
-import { BookAudio, Mic, PenLine } from "@lucide/vue";
+import { BookAudio, Disc, Mic, PenLine } from "@lucide/vue";
 import { computed } from "vue";
 
 export interface Props {
-  item?: MediaCollection<Audiobook>;
+  item?: MediaCollection<Audiobook> | MediaCollection<Album>;
 }
 const props = defineProps<Props>();
+
+// a series of albums (e.g. a compilation series) rather than of audiobooks
+const isAlbumSeries = computed(
+  () => props.item?.items[0]?.media_type === MediaType.ALBUM,
+);
+
+const audiobookCollection = computed(() =>
+  props.item && !isAlbumSeries.value
+    ? (props.item as MediaCollection<Audiobook>)
+    : undefined,
+);
 
 // keeps the stacked covers inside the cover's square at any size
 const STACK_OFFSET_RATIO = 0.095;
@@ -97,21 +113,49 @@ const backdrop = computed(() => {
 });
 
 const authors = computed(() =>
-  props.item
-    ? getAudiobookCollectionArtists(props.item, (book) => book.authors)
+  audiobookCollection.value
+    ? getAudiobookCollectionArtists(
+        audiobookCollection.value,
+        (book) => book.authors,
+      )
     : [],
 );
 
 const narrators = computed(() =>
-  props.item
-    ? getAudiobookCollectionArtists(props.item, (book) => book.narrators)
+  audiobookCollection.value
+    ? getAudiobookCollectionArtists(
+        audiobookCollection.value,
+        (book) => book.narrators,
+      )
     : [],
 );
 
+// "Series · 12 albums · 1983–2024", without whatever is unknown
+const albumSeriesFacts = (albums: Album[]) => {
+  const parts = [$t("series")];
+  if (albums.length) {
+    parts.push(
+      $t("n_albums", albums.length, { named: { count: albums.length } }),
+    );
+  }
+  const years = albums
+    .map((album) => album.year)
+    .filter((year): year is number => !!year);
+  if (years.length) {
+    const first = Math.min(...years);
+    const last = Math.max(...years);
+    parts.push(first === last ? String(first) : `${first}–${last}`);
+  }
+  return parts;
+};
+
 // "Collection · 5 audiobooks · 42 h 10 min", without whatever is unknown
 const facts = computed(() => {
+  if (isAlbumSeries.value) {
+    return albumSeriesFacts((props.item?.items ?? []) as Album[]);
+  }
   const parts = [$t("collection")];
-  const books = props.item?.items ?? [];
+  const books = audiobookCollection.value?.items ?? [];
   if (books.length) {
     parts.push(
       $t("n_audiobooks", books.length, { named: { count: books.length } }),

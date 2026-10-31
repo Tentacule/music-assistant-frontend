@@ -977,7 +977,32 @@ export class MusicAssistantApi {
     album_types?: Array<AlbumType | string>,
     provider?: string | string[],
     genre?: number | number[],
-  ): Promise<Album[]> {
+    collapse_collections?: false,
+  ): Promise<Album[]>;
+  public getLibraryAlbums(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    album_types?: Array<AlbumType | string>,
+    provider?: string | string[],
+    genre?: number | number[],
+    collapse_collections?: boolean,
+  ): Promise<(Album | MediaCollection<Album>)[]>;
+  public getLibraryAlbums(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    album_types?: Array<AlbumType | string>,
+    provider?: string | string[],
+    genre?: number | number[],
+    collapse_collections?: boolean,
+  ): Promise<(Album | MediaCollection<Album>)[]> {
     return this.sendCommand("music/albums/library_items", {
       favorite,
       search,
@@ -988,6 +1013,23 @@ export class MusicAssistantApi {
       album_types,
       provider,
       genre,
+      collapse_collections,
+    });
+  }
+
+  public getAlbumCollection(
+    item_id: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    favorite?: boolean,
+  ): Promise<MediaCollection<Album>> {
+    return this.sendCommand("music/albums/get_collection", {
+      item_id,
+      search,
+      limit,
+      offset,
+      favorite,
     });
   }
 

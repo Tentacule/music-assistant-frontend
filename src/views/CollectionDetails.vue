@@ -1,6 +1,6 @@
 <template>
   <section>
-    <CollectionHero :item="audiobookCollection" />
+    <CollectionHero :item="heroCollection" />
     <!-- the listing keeps its own toolbar, but takes the title and gutter of the hero above -->
     <ItemsListing
       :key="`${provider}:${itemId}`"
@@ -30,6 +30,7 @@ import ItemsListing from "@/components/ItemsListing.vue";
 import { useCollectionDetails } from "@/composables/useCollectionDetails";
 import {
   MediaType,
+  type Album,
   type Audiobook,
   type MediaCollection,
 } from "@/plugins/api/interfaces";
@@ -44,15 +45,23 @@ const props = defineProps<Props>();
 const { itemDetails, collectionMediaType, loadCollectionItems } =
   useCollectionDetails(() => props);
 
-const audiobookCollection = computed(() =>
-  collectionMediaType.value === MediaType.AUDIOBOOK
-    ? (itemDetails.value as MediaCollection<Audiobook> | undefined)
-    : undefined,
-);
+const heroCollection = computed(() => {
+  switch (collectionMediaType.value) {
+    case MediaType.AUDIOBOOK:
+      return itemDetails.value as MediaCollection<Audiobook> | undefined;
+    case MediaType.ALBUM:
+      return itemDetails.value as MediaCollection<Album> | undefined;
+    default:
+      return undefined;
+  }
+});
 
 const title = computed(() => {
   if (collectionMediaType.value === MediaType.AUDIOBOOK) {
     return $t("audiobooks_in_collection");
+  }
+  if (collectionMediaType.value === MediaType.ALBUM) {
+    return $t("albums_in_series");
   }
   return "";
 });
@@ -60,6 +69,9 @@ const title = computed(() => {
 const emptyMessage = computed(() => {
   if (collectionMediaType.value === MediaType.AUDIOBOOK) {
     return $t("collection_no_audiobooks");
+  }
+  if (collectionMediaType.value === MediaType.ALBUM) {
+    return $t("series_no_albums");
   }
   return "";
 });

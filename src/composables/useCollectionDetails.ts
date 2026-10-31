@@ -26,18 +26,30 @@ export function useCollectionDetails(collection: () => CollectionRef) {
     },
   );
 
+  // the collections the server can list: series of audiobooks and of albums
+  const getCollection = (
+    ...args: Parameters<typeof api.getAudiobookCollection>
+  ): Promise<MediaCollection<MediaItemType>> =>
+    collectionMediaType.value === MediaType.ALBUM
+      ? api.getAlbumCollection(...args)
+      : api.getAudiobookCollection(...args);
+
   const loadCollectionItems = async (
     params: LoadDataParams,
   ): Promise<MediaItemType[]> => {
-    if (collectionMediaType.value !== MediaType.AUDIOBOOK) return [];
+    if (
+      collectionMediaType.value !== MediaType.AUDIOBOOK &&
+      collectionMediaType.value !== MediaType.ALBUM
+    )
+      return [];
     const { itemId, provider } = collection();
     if (!itemDetails.value) {
-      const snapshot = await api.getAudiobookCollection(itemId, undefined, 0);
+      const snapshot = await getCollection(itemId, undefined, 0);
       if (itemId !== collection().itemId || provider !== collection().provider)
         return [];
       itemDetails.value = snapshot;
     }
-    const page = await api.getAudiobookCollection(
+    const page = await getCollection(
       itemId,
       params.search,
       params.limit,

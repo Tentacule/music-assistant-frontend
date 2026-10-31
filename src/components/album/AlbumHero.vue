@@ -55,6 +55,32 @@
                 </template>
               </span>
             </div>
+            <!-- the series the album is part of, e.g. a compilation series -->
+            <div
+              v-if="series.length"
+              class="album-hero__line"
+              :title="$t('part_of_series')"
+            >
+              <Library :size="16" class="album-hero__icon" />
+              <span class="album-hero__line-text">
+                <template
+                  v-for="(collection, index) in series"
+                  :key="collection.title"
+                >
+                  <span v-if="index > 0">,&nbsp;</span>
+                  <button
+                    type="button"
+                    class="album-hero__link"
+                    @click="gotoSeries(collection)"
+                  >
+                    {{ collection.title }}
+                  </button>
+                  <span v-if="collection.sequence != null">
+                    &nbsp;#{{ collection.sequence }}
+                  </span>
+                </template>
+              </span>
+            </div>
             <DetailHeroFacts v-if="facts.length" :icon="Disc" :facts="facts" />
           </div>
 
@@ -104,18 +130,21 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatTotalDuration } from "@/helpers/duration";
 import { api } from "@/plugins/api";
+import { getCollectionItemId } from "@/plugins/api/helpers";
 import {
   AlbumType,
+  MediaType,
   type Album,
   type Artist,
   type ItemMapping,
+  type MediaItemCollection,
   type SortDirection,
   type SortField,
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { Disc, Music, Orbit, Shuffle } from "@lucide/vue";
+import { Disc, Library, Music, Orbit, Shuffle } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
@@ -168,6 +197,19 @@ const facts = computed(() => {
   if (props.duration) parts.push(formatTotalDuration(props.duration));
   return parts;
 });
+
+const series = computed(() => props.item?.metadata?.collections ?? []);
+
+// a series lists the library albums that are part of it
+const gotoSeries = function (collection: MediaItemCollection) {
+  router.push({
+    name: "collection",
+    params: {
+      itemId: getCollectionItemId(collection.title, MediaType.ALBUM),
+      provider: "library",
+    },
+  });
+};
 
 const gotoArtist = function (artist: Artist | ItemMapping) {
   router.push({

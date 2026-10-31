@@ -18,6 +18,7 @@
     :total="total"
     :show-album-type-filter="true"
     :show-provider-filter="true"
+    :show-collapse-collections="true"
   />
 </template>
 
@@ -80,10 +81,16 @@ const loadItems = async function (params: LoadDataParams) {
     params.albumType,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    params.collapseCollections,
   );
 };
 
 const setTotals = async function (params: LoadDataParams) {
+  // a collapsed series counts as one row, which the count endpoint does not know of
+  if (params.collapseCollections) {
+    setTotal(undefined);
+    return;
+  }
   if (!params.favoritesOnly && !params.albumType && !params.provider) {
     setTotal(store.libraryAlbumsCount);
     return;

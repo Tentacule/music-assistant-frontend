@@ -286,6 +286,14 @@ export function resolvePlayerQueue(player?: Player): PlayerQueue | undefined {
   return undefined;
 }
 
+export const getCollectionItemId = function (
+  collectionName: string,
+  itemMediaType: MediaType,
+) {
+  // mirrors the backend's "<MediaType>___<collection_name>" item id
+  return `${itemMediaType}___${collectionName}`;
+};
+
 export const getCollectionMediaTypeFromItemId = function (itemId: string) {
   // the item id is defined by the backend as "<MediaType>___<collection_name>"
   const itemIdType = itemId.split("___", 1)[0];
