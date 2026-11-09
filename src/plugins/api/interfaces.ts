@@ -1163,6 +1163,7 @@ export interface AlbumVersionEnrichment {
   catalog_numbers: string[];
   label_names: string[];
   track_count_per_disc: number[];
+  release_group_id?: string;
 }
 
 export interface AudioMetadata {

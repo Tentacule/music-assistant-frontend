@@ -80,16 +80,18 @@ export function useAlbumRowData(
   function loadRowData() {
     if (!album.value) return;
     const rows = visibleRows.value;
+    // Always load enrichment so the album hero can show the current version's
+    // catalog number even when the "other versions" row is hidden.
+    fetchOnce(
+      "versions_enrichment",
+      loadAlbumVersionsEnrichment,
+      (items) => (versionEnrichments.value = items),
+    );
     if (rows.includes("other_versions")) {
       fetchOnce(
         "versions",
         loadAlbumVersions,
         (items) => (versionItems.value = items),
-      );
-      fetchOnce(
-        "versions_enrichment",
-        loadAlbumVersionsEnrichment,
-        (items) => (versionEnrichments.value = items),
       );
     }
     if (rows.includes("more_from_artist") && moreFromArtistSource.value) {

@@ -132,6 +132,8 @@ export interface Props {
   // the order the tracks are listed in below, which the play button follows
   tracksSortField?: SortField;
   tracksSortDirection?: SortDirection;
+  // MB catalog numbers for the specific version being shown
+  catalogNumbers?: string[];
 }
 const props = defineProps<Props>();
 
@@ -151,7 +153,7 @@ const coverSize = computed(() =>
   isPhone.value ? PHONE_COVER_SIZE : COVER_SIZE,
 );
 
-// "Album · 2011 · 12 tracks · 48 min", without whatever the album does not have
+// "Album · 2011 · 12 tracks · HOSPCDS01-CDR · 48 min", without whatever the album does not have
 const facts = computed(() => {
   const album = props.item;
   if (!album) return [];
@@ -164,6 +166,9 @@ const facts = computed(() => {
     parts.push(
       $t("n_tracks", props.trackCount, { named: { count: props.trackCount } }),
     );
+  }
+  if (props.catalogNumbers?.length) {
+    parts.push(props.catalogNumbers.join(", "));
   }
   if (props.duration) parts.push(formatTotalDuration(props.duration));
   return parts;

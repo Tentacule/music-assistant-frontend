@@ -8,6 +8,7 @@
       :duration="runningTime"
       :tracks-sort-field="tracksListing?.[0]?.sortField"
       :tracks-sort-direction="tracksListing?.[0]?.sortDirection"
+      :catalog-numbers="currentEnrichment?.catalog_numbers"
       @edit-rows="rowsEditorOpen = true"
     />
 
@@ -145,6 +146,7 @@ import {
   MediaType,
   Scope,
   type Album,
+  type AlbumVersionEnrichment,
   type Artist,
   type ItemMapping,
   type Track,
@@ -208,6 +210,16 @@ const {
   moreFromArtistSource,
   moreFromArtistSourceDisplay,
 } = useAlbumRowData(albumForRows, visibleRows);
+
+/** Enrichment for the specific version currently open, if its MB release id is known. */
+const currentEnrichment = computed<AlbumVersionEnrichment | undefined>(() => {
+  const album = itemDetails.value;
+  if (!album) return undefined;
+  const mbid = album.external_ids.find(
+    ([id]) => id === ExternalID.MB_ALBUM,
+  )?.[1];
+  return mbid ? versionEnrichmentByMbId.value.get(mbid) : undefined;
+});
 
 // the cover at first; the artist's fanart takes over once that lookup is done
 const backdrop = computed(() =>
