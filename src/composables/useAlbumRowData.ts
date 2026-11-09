@@ -1,5 +1,6 @@
 import {
   loadAlbumVersions,
+  loadAlbumVersionsEnrichment,
   loadArtistReleases,
 } from "@/components/album/albumData";
 import { albumRows, type AlbumRowId } from "@/components/album/albumRows";
@@ -8,7 +9,11 @@ import {
   type RowSource,
 } from "@/components/details/rowRegistry";
 import { mappingsIdentity, useRowRequests } from "@/composables/useRowRequests";
-import { MediaType, type Album } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  type Album,
+  type AlbumVersionEnrichment,
+} from "@/plugins/api/interfaces";
 import { computed, ref, watch, type Ref } from "vue";
 
 /**
@@ -26,6 +31,7 @@ export function useAlbumRowData(
   visibleRows: Ref<AlbumRowId[]>,
 ) {
   const versionItems = ref<Album[]>();
+  const versionEnrichments = ref<AlbumVersionEnrichment[]>();
   // artist releases per source: switching the source loads the new one and
   // keeps it. Absent = still loading.
   const artistReleases = ref(new Map<RowSource, Album[]>());
@@ -37,6 +43,7 @@ export function useAlbumRowData(
     mappingsIdentity,
     () => {
       versionItems.value = undefined;
+      versionEnrichments.value = undefined;
       artistReleases.value = new Map();
       loadRowData();
     },
@@ -79,6 +86,11 @@ export function useAlbumRowData(
         loadAlbumVersions,
         (items) => (versionItems.value = items),
       );
+      fetchOnce(
+        "versions_enrichment",
+        loadAlbumVersionsEnrichment,
+        (items) => (versionEnrichments.value = items),
+      );
     }
     if (rows.includes("more_from_artist") && moreFromArtistSource.value) {
       fetchArtistReleases(moreFromArtistSource.value);
@@ -93,8 +105,17 @@ export function useAlbumRowData(
     );
   }
 
+  /** Map from MB release id → enrichment for O(1) lookup in templates. */
+  const versionEnrichmentByMbId = computed(
+    () =>
+      new Map(
+        (versionEnrichments.value ?? []).map((e) => [e.mb_release_id, e]),
+      ),
+  );
+
   return {
     versionItems,
+    versionEnrichmentByMbId,
     artistReleaseItems,
     moreFromArtistSource,
     moreFromArtistSourceDisplay,

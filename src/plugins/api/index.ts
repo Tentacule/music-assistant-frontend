@@ -17,6 +17,7 @@ import { ApiCommandError } from "./errors";
 import { getDeviceName, itemSupportsPlayLog } from "./helpers";
 import {
   type Album,
+  type AlbumVersionEnrichment,
   type AnnouncementTtsEngine,
   type Artist,
   type AuthToken,
@@ -1042,6 +1043,16 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+    });
+  }
+
+  public getAlbumVersionsEnrichment(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<AlbumVersionEnrichment[]> {
+    return this.sendCommand("music/albums/versions_enrichment", {
+      item_id,
+      provider_instance_id_or_domain,
     });
   }
 

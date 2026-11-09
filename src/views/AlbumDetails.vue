@@ -52,7 +52,9 @@
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         >
-          <template #subtitle="{ item }">{{ versionSubtitle(item) }}</template>
+          <template #subtitle="{ item }">{{
+            versionSubtitle(item as MediaItemType)
+          }}</template>
         </MediaRowList>
 
         <!-- more from the album artist -->
@@ -137,6 +139,7 @@ import { api } from "@/plugins/api";
 import { MUSICBRAINZ_PROVIDER } from "@/plugins/api/helpers";
 import {
   AlbumType,
+  ExternalID,
   ListingType,
   MediaItemType,
   MediaType,
@@ -200,6 +203,7 @@ const albumForRows = computed<Album | undefined>(() => {
 
 const {
   versionItems,
+  versionEnrichmentByMbId,
   artistReleaseItems,
   moreFromArtistSource,
   moreFromArtistSourceDisplay,
@@ -438,13 +442,35 @@ function showRow(items?: unknown[]): boolean {
   return items === undefined || items.length > 0;
 }
 
-/** "Album · 2011": what kind of release a version is, and when it came out. */
+/** "Album · 2011 · 12 pistes · TOCP-65731 · Remaster": release info enriched with MB data. */
 function versionSubtitle(item: MediaItemType | ItemMapping): string {
   const parts: string[] = [];
   if ("album_type" in item && item.album_type !== AlbumType.UNKNOWN) {
     parts.push($t(`album_type.${item.album_type}`));
   }
   if ("year" in item && item.year) parts.push(String(item.year));
+  // MusicBrainz enrichment: track count and catalog number
+  const mbid =
+    "external_ids" in item
+      ? (item as Album).external_ids.find(
+          ([id]) => id === ExternalID.MB_ALBUM,
+        )?.[1]
+      : undefined;
+  const enrichment = mbid ? versionEnrichmentByMbId.value.get(mbid) : undefined;
+  if (enrichment) {
+    const totalTracks = enrichment.track_count_per_disc.reduce(
+      (a, b) => a + b,
+      0,
+    );
+    if (totalTracks)
+      parts.push(
+        $t("n_tracks", totalTracks, { named: { count: totalTracks } }),
+      );
+    if (enrichment.catalog_numbers.length)
+      parts.push(enrichment.catalog_numbers.join(", "));
+  }
+  // disambiguation (e.g. "Remaster", "Anniversary Edition") — already on the Album object
+  if ("version" in item && item.version) parts.push(item.version);
   return parts.join(" · ");
 }
 </script>

@@ -8,6 +8,7 @@ import { api } from "@/plugins/api";
 import {
   ImageType,
   type Album,
+  type AlbumVersionEnrichment,
   type Artist,
   type SortDirection,
   type SortField,
@@ -41,6 +42,13 @@ export async function loadAlbumTracks(
 /** The same album elsewhere: other editions, and the copies other sources hold. */
 export async function loadAlbumVersions(album: Album): Promise<Album[]> {
   return await api.getAlbumVersions(album.item_id, album.provider);
+}
+
+/** MusicBrainz enrichment (catalog number, label, track count) for each provider version. */
+export async function loadAlbumVersionsEnrichment(
+  album: Album,
+): Promise<AlbumVersionEnrichment[]> {
+  return await api.getAlbumVersionsEnrichment(album.item_id, album.provider);
 }
 
 /**

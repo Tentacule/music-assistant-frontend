@@ -1158,6 +1158,13 @@ export interface Album extends MediaItem {
   album_type: AlbumType;
 }
 
+export interface AlbumVersionEnrichment {
+  mb_release_id: string;
+  catalog_numbers: string[];
+  label_names: string[];
+  track_count_per_disc: number[];
+}
+
 export interface AudioMetadata {
   // Audio analysis details (e.g. bpm, musical key).
   bpm: number | null;
