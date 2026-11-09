@@ -13,6 +13,7 @@ import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 const { apiMock, emittedMenus, hasScope, storeMock } = vi.hoisted(() => ({
   emittedMenus: [] as ContextMenuDialogEvent[],
   apiMock: {
+    getAlbumGroupInfo: vi.fn().mockResolvedValue({ can_set_default: false }),
     getItem: vi.fn(),
     getLibraryItem: vi.fn(),
     getProvider: vi.fn(),
@@ -102,5 +103,26 @@ describe("the context menu of an unavailable library item", () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
 
     expect(await offeredLabels()).not.toContain("find_on_music_services");
+  });
+});
+
+describe("the default version entry of an album", () => {
+  it("is offered when the release group has several versions", async () => {
+    apiMock.getAlbumGroupInfo.mockResolvedValueOnce({ can_set_default: true });
+
+    expect(await offeredLabels()).toContain("set_default_album_version");
+    expect(apiMock.getAlbumGroupInfo).toHaveBeenCalledWith("1", "library");
+  });
+
+  it("stays hidden when the server does not offer it", async () => {
+    apiMock.getAlbumGroupInfo.mockResolvedValueOnce({ can_set_default: false });
+
+    expect(await offeredLabels()).not.toContain("set_default_album_version");
+  });
+
+  it("stays hidden when the lookup fails", async () => {
+    apiMock.getAlbumGroupInfo.mockRejectedValueOnce(new Error("offline"));
+
+    expect(await offeredLabels()).not.toContain("set_default_album_version");
   });
 });

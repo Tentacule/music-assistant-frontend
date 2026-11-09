@@ -583,7 +583,9 @@ describe("MusicAssistantApi error handling", () => {
         favorite,
       );
 
-      expect(transport.lastCommand.command).toBe("music/artists/artist_albums");
+      expect(transport.lastCommand.command).toBe(
+        "music/album_groups/artist_albums",
+      );
       expect(transport.lastCommand.args).toEqual({
         item_id: "artist-1",
         provider_instance_id_or_domain: "library",

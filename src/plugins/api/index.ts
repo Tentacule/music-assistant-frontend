@@ -17,6 +17,7 @@ import { ApiCommandError } from "./errors";
 import { getDeviceName, itemSupportsPlayLog } from "./helpers";
 import {
   type Album,
+  type AlbumGroupInfo,
   type AlbumVersionEnrichment,
   type AnnouncementTtsEngine,
   type Artist,
@@ -646,7 +647,7 @@ export class MusicAssistantApi {
     favorite_only: boolean = false,
     album_types?: Array<AlbumType | string>,
   ): Promise<number> {
-    return this.sendCommand("music/albums/count", {
+    return this.sendCommand("music/album_groups/count", {
       favorite_only,
       album_types,
     });
@@ -817,7 +818,7 @@ export class MusicAssistantApi {
     album_types?: AlbumType[],
     favorite?: boolean,
   ): Promise<Album[]> {
-    return this.sendCommand("music/artists/artist_albums", {
+    return this.sendCommand("music/album_groups/artist_albums", {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
@@ -979,7 +980,7 @@ export class MusicAssistantApi {
     provider?: string | string[],
     genre?: number | number[],
   ): Promise<Album[]> {
-    return this.sendCommand("music/albums/library_items", {
+    return this.sendCommand("music/album_groups/library_items", {
       favorite,
       search,
       limit,
@@ -1035,7 +1036,7 @@ export class MusicAssistantApi {
     sort_field?: SortField,
     sort_direction?: SortDirection,
   ): Promise<Album[]> {
-    return this.sendCommand("music/albums/album_versions", {
+    return this.sendCommand("music/album_groups/versions", {
       item_id,
       provider_instance_id_or_domain,
       search,
@@ -1044,6 +1045,20 @@ export class MusicAssistantApi {
       sort_field,
       sort_direction,
     });
+  }
+
+  public getAlbumGroupInfo(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<AlbumGroupInfo> {
+    return this.sendCommand("music/album_groups/info", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public setAlbumGroupDefault(item_id: string): Promise<void> {
+    return this.sendCommand("music/album_groups/set_default", { item_id });
   }
 
   public getAlbumVersionsEnrichment(
