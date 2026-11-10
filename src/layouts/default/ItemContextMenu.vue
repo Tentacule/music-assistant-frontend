@@ -414,6 +414,7 @@ import {
   Shuffle,
   SkipForward,
   Sparkles,
+  Star,
   ThumbsDown,
   Trash2,
 } from "@lucide/vue";
@@ -1151,6 +1152,33 @@ export const getContextMenuItems = async function (
       },
       icon: Image,
     });
+  }
+  // the version of an album that the lists show for its release group
+  if (
+    items.length === 1 &&
+    canEditLibrary &&
+    items[0].media_type === MediaType.ALBUM &&
+    items[0].provider === "library"
+  ) {
+    const albumId = items[0].item_id;
+    const groupInfo = await api
+      .getAlbumGroupInfo(albumId, "library")
+      .catch(() => undefined);
+    if (groupInfo?.can_set_default) {
+      contextMenuItems.push({
+        label: "set_default_album_version",
+        labelArgs: [],
+        action: async () => {
+          try {
+            await api.setAlbumGroupDefault(albumId);
+            toast.success($t("set_default_album_version_done"));
+          } catch {
+            toast.error($t("set_default_album_version_failed"));
+          }
+        },
+        icon: Star,
+      });
+    }
   }
   // edit item (for builtin provider items that support editing)
   if (

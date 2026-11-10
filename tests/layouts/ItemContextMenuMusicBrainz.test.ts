@@ -18,6 +18,7 @@ import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 const { apiMock, emittedMenus, storeMock } = vi.hoisted(() => ({
   emittedMenus: [] as ContextMenuDialogEvent[],
   apiMock: {
+    getAlbumGroupInfo: vi.fn().mockResolvedValue({ can_set_default: false }),
     addItemToFavorites: vi.fn(),
     addItemToLibrary: vi.fn(),
     removeItemFromLibrary: vi.fn(),

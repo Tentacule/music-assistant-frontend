@@ -10,6 +10,9 @@ const { mockLoadAlbumVersions, mockLoadArtistReleases, mockEffectiveSource } =
 vi.mock("@/components/album/albumData", () => ({
   loadAlbumVersions: mockLoadAlbumVersions,
   loadArtistReleases: mockLoadArtistReleases,
+  // the hero always asks for these; they are not rows, so they stay empty here
+  loadAlbumVersionsEnrichment: vi.fn(async () => []),
+  loadAlbumSeriesInfo: vi.fn(async () => null),
 }));
 
 // the effective source is the row registry's job (tested there); here it is

@@ -1158,6 +1158,14 @@ export interface Album extends MediaItem {
   album_type: AlbumType;
 }
 
+export interface AlbumGroupInfo {
+  release_group_id: string | null;
+  version_count: number;
+  default_item_id: string | null;
+  is_default: boolean;
+  can_set_default: boolean;
+}
+
 export interface AlbumVersionEnrichment {
   mb_release_id: string;
   catalog_numbers: string[];
