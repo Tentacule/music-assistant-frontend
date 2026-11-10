@@ -288,7 +288,11 @@
         >
           <template #default="{ item, index }">
             <div v-if="'isDiscHeader' in item" class="disc-header">
-              {{ $t("disc", { number: item.disc }) }}
+              {{
+                item.subtitle
+                  ? `${item.disc} - ${item.subtitle}`
+                  : $t("disc", { number: item.disc })
+              }}
             </div>
             <TrackTableRow
               v-else-if="showTrackTable"
@@ -818,10 +822,14 @@ const MEDIA_TYPE_LABEL_KEYS: Partial<Record<MediaType, string>> = {
 interface DiscHeader {
   isDiscHeader: true;
   disc: number;
+  subtitle?: string;
 }
 
 const discNumber = (i: MediaItemType) =>
   "disc_number" in i ? i.disc_number : undefined;
+
+const discSubtitle = (i: MediaItemType) =>
+  "disc_subtitle" in i ? (i.disc_subtitle as string | undefined) : undefined;
 
 // for multi-disc albums (in default track order), insert a "Disc X" header
 // before the first track of each disc.
@@ -840,7 +848,11 @@ const listDisplayItems = computed<(MediaItemType | DiscHeader)[]>(() => {
   for (const item of pagedItems.value) {
     const disc = discNumber(item);
     if (disc && disc !== lastDisc) {
-      result.push({ isDiscHeader: true, disc });
+      result.push({
+        isDiscHeader: true,
+        disc,
+        subtitle: discSubtitle(item) || undefined,
+      });
       lastDisc = disc;
     }
     result.push(item);

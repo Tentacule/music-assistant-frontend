@@ -1188,6 +1188,8 @@ export interface Track extends MediaItem {
   // tracks that are not album tracks
   album?: ItemMapping | Album | null;
   disc_number: number;
+  // optional disc name from discsubtitle tag, present only on multi-disc albums
+  disc_subtitle?: string;
   track_number: number;
   // only populated when the full track is requested (get_track), never on listings
   audio_metadata?: AudioMetadata | null;
