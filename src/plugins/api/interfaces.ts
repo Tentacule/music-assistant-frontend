@@ -1166,6 +1166,13 @@ export interface AlbumVersionEnrichment {
   release_group_id?: string;
 }
 
+export interface AlbumSeriesInfo {
+  release_group_id: string;
+  series_id: string;
+  series_name: string;
+  order_number?: string | null;
+}
+
 export interface AudioMetadata {
   // Audio analysis details (e.g. bpm, musical key).
   bpm: number | null;

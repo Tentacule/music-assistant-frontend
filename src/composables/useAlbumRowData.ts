@@ -1,4 +1,5 @@
 import {
+  loadAlbumSeriesInfo,
   loadAlbumVersions,
   loadAlbumVersionsEnrichment,
   loadArtistReleases,
@@ -12,6 +13,7 @@ import { mappingsIdentity, useRowRequests } from "@/composables/useRowRequests";
 import {
   MediaType,
   type Album,
+  type AlbumSeriesInfo,
   type AlbumVersionEnrichment,
 } from "@/plugins/api/interfaces";
 import { computed, ref, watch, type Ref } from "vue";
@@ -32,6 +34,7 @@ export function useAlbumRowData(
 ) {
   const versionItems = ref<Album[]>();
   const versionEnrichments = ref<AlbumVersionEnrichment[]>();
+  const seriesInfo = ref<AlbumSeriesInfo | null>(null);
   // artist releases per source: switching the source loads the new one and
   // keeps it. Absent = still loading.
   const artistReleases = ref(new Map<RowSource, Album[]>());
@@ -44,6 +47,7 @@ export function useAlbumRowData(
     () => {
       versionItems.value = undefined;
       versionEnrichments.value = undefined;
+      seriesInfo.value = null;
       artistReleases.value = new Map();
       loadRowData();
     },
@@ -87,6 +91,15 @@ export function useAlbumRowData(
       loadAlbumVersionsEnrichment,
       (items) => (versionEnrichments.value = items),
     );
+    // Always load series info so the hero can show the series name and order.
+    fetchOnce(
+      "series_info",
+      async (a) => {
+        const info = await loadAlbumSeriesInfo(a);
+        return info ? [info] : [];
+      },
+      (items) => (seriesInfo.value = items[0] ?? null),
+    );
     if (rows.includes("other_versions")) {
       fetchOnce(
         "versions",
@@ -118,6 +131,7 @@ export function useAlbumRowData(
   return {
     versionItems,
     versionEnrichmentByMbId,
+    seriesInfo,
     artistReleaseItems,
     moreFromArtistSource,
     moreFromArtistSourceDisplay,

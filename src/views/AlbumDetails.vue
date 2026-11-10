@@ -9,6 +9,7 @@
       :tracks-sort-field="tracksListing?.[0]?.sortField"
       :tracks-sort-direction="tracksListing?.[0]?.sortDirection"
       :catalog-numbers="currentEnrichment?.catalog_numbers"
+      :series-info="seriesInfo"
       @edit-rows="rowsEditorOpen = true"
     />
 
@@ -206,6 +207,7 @@ const albumForRows = computed<Album | undefined>(() => {
 const {
   versionItems,
   versionEnrichmentByMbId,
+  seriesInfo,
   artistReleaseItems,
   moreFromArtistSource,
   moreFromArtistSourceDisplay,

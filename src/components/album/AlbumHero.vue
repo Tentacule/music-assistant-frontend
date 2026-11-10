@@ -107,6 +107,7 @@ import { api } from "@/plugins/api";
 import {
   AlbumType,
   type Album,
+  type AlbumSeriesInfo,
   type Artist,
   type ItemMapping,
   type SortDirection,
@@ -134,6 +135,8 @@ export interface Props {
   tracksSortDirection?: SortDirection;
   // MB catalog numbers for the specific version being shown
   catalogNumbers?: string[];
+  // MB series membership: name and optional order number
+  seriesInfo?: AlbumSeriesInfo | null;
 }
 const props = defineProps<Props>();
 
@@ -153,7 +156,7 @@ const coverSize = computed(() =>
   isPhone.value ? PHONE_COVER_SIZE : COVER_SIZE,
 );
 
-// "Album · 2011 · 12 tracks · HOSPCDS01-CDR · 48 min", without whatever the album does not have
+// "Album · 2011 · My Series #3 · 12 tracks · HOSPCDS01-CDR · 48 min", without whatever the album does not have
 const facts = computed(() => {
   const album = props.item;
   if (!album) return [];
@@ -162,6 +165,10 @@ const facts = computed(() => {
     parts.push($t(`album_type.${album.album_type}`));
   }
   if (album.year) parts.push(String(album.year));
+  if (props.seriesInfo) {
+    const { series_name, order_number } = props.seriesInfo;
+    parts.push(order_number ? `${series_name} #${order_number}` : series_name);
+  }
   if (props.trackCount) {
     parts.push(
       $t("n_tracks", props.trackCount, { named: { count: props.trackCount } }),

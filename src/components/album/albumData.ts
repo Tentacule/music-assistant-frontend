@@ -6,8 +6,10 @@ import type { RowSource } from "@/components/details/rowRegistry";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
+  ExternalID,
   ImageType,
   type Album,
+  type AlbumSeriesInfo,
   type AlbumVersionEnrichment,
   type Artist,
   type SortDirection,
@@ -49,6 +51,17 @@ export async function loadAlbumVersionsEnrichment(
   album: Album,
 ): Promise<AlbumVersionEnrichment[]> {
   return await api.getAlbumVersionsEnrichment(album.item_id, album.provider);
+}
+
+/** MusicBrainz series membership (name, order number) for this release group, or null. */
+export async function loadAlbumSeriesInfo(
+  album: Album,
+): Promise<AlbumSeriesInfo | null> {
+  const releaseGroupId = album.external_ids.find(
+    ([id]) => id === ExternalID.MB_RELEASEGROUP,
+  )?.[1];
+  if (!releaseGroupId) return null;
+  return await api.getReleaseGroupSeries(releaseGroupId);
 }
 
 /**

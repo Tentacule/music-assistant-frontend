@@ -17,6 +17,7 @@ import { ApiCommandError } from "./errors";
 import { getDeviceName, itemSupportsPlayLog } from "./helpers";
 import {
   type Album,
+  type AlbumSeriesInfo,
   type AlbumVersionEnrichment,
   type AnnouncementTtsEngine,
   type Artist,
@@ -1053,6 +1054,14 @@ export class MusicAssistantApi {
     return this.sendCommand("music/albums/versions_enrichment", {
       item_id,
       provider_instance_id_or_domain,
+    });
+  }
+
+  public getReleaseGroupSeries(
+    release_group_id: string,
+  ): Promise<AlbumSeriesInfo | null> {
+    return this.sendCommand("music/albums/release_group_series", {
+      release_group_id,
     });
   }
 
