@@ -833,6 +833,32 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * The albums of an artist, like getArtistAlbums, optionally narrowed to the
+   * albums in (no) series and with the albums of a series grouped as one.
+   */
+  public getArtistAlbumsAndSeries(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    options: {
+      search?: string;
+      limit?: number;
+      offset?: number;
+      sort_field?: SortField;
+      sort_direction?: SortDirection;
+      album_types?: AlbumType[];
+      favorite?: boolean;
+      collapse_collections?: boolean;
+      series_filter?: SeriesFilter;
+    },
+  ): Promise<(Album | MediaCollection<Album>)[]> {
+    return this.sendCommand("music/album_groups/artist_albums", {
+      item_id,
+      provider_instance_id_or_domain,
+      ...options,
+    });
+  }
+
   public getArtistAppearsOn(
     item_id: string,
     provider_instance_id_or_domain: string,

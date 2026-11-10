@@ -21,6 +21,8 @@
       :default-provider="config.defaultProvider"
       :provider-override="config.providerOverride"
       :show-album-type-filter="config.showAlbumTypeFilter"
+      :show-collapse-collections="config.showSeriesFilter"
+      :show-series-filter="config.showSeriesFilter"
       :show-track-number="config.showTrackNumber"
       :show-refresh-button="false"
       :sort-listing="config.sortListing"
@@ -34,7 +36,7 @@
 
 <script setup lang="ts">
 import {
-  artistAlbumsBySource,
+  artistAlbumPageBySource,
   loadArtistAppearsOn,
   loadArtistDiscography,
   loadArtistTracks,
@@ -74,6 +76,8 @@ interface ListingConfig {
   loadPagedData: (params: LoadDataParams) => Promise<MediaItemType[]>;
   sortListing: ListingType;
   showAlbumTypeFilter: boolean;
+  // group the library albums by series and narrow them to (no) series
+  showSeriesFilter?: boolean;
   showFavoritesOnlyFilter: boolean;
   showProviderFilter: boolean;
   showTrackNumber: boolean;
@@ -165,6 +169,7 @@ const config = computed<ListingConfig | undefined>(() => {
         labelKey: artistRows.definition("albums").labelKey,
         path: "artistalbums",
         showAlbumTypeFilter: true,
+        showSeriesFilter: true,
         sortListing: ListingType.ARTIST_ALBUMS,
         emptyMessage: showsLibrary.value
           ? $t("artist_no_library_albums")
@@ -332,7 +337,7 @@ async function loadArtistAlbumPage(
     ? rowTypes.filter((albumType) => params.albumType?.includes(albumType))
     : rowTypes;
   if (!albumTypes.length) return [];
-  return await artistAlbumsBySource(itemDetails.value, source, {
+  return await artistAlbumPageBySource(itemDetails.value, source, {
     search: params.search,
     limit: params.limit,
     offset: params.offset,
@@ -340,6 +345,8 @@ async function loadArtistAlbumPage(
     sortDirection: params.sortDirection,
     albumTypes,
     favoritesOnly: params.favoritesOnly,
+    collapseCollections: params.collapseCollections,
+    seriesFilter: params.seriesFilter,
   });
 }
 
