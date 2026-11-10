@@ -8,6 +8,7 @@ interface ListingCountOptions {
   total?: number;
   requireProviderSelection?: boolean;
   showCollapseCollections?: boolean;
+  showSeriesFilter?: boolean;
 }
 
 interface ListingCountState {
@@ -55,7 +56,10 @@ export function useListingCount(
         (p.provider?.length && !options.requireProviderSelection) ||
         p.libraryOnly ||
         p.hideFullyPlayed ||
-        (options.showCollapseCollections && p.collapseCollections),
+        (options.showCollapseCollections && p.collapseCollections) ||
+        (options.showSeriesFilter &&
+          !!p.seriesFilter &&
+          p.seriesFilter !== "all"),
       ),
     });
   });

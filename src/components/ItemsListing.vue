@@ -434,6 +434,7 @@ import { useCommandCenter } from "@/composables/useCommandCenter";
 import { useItemsListing } from "@/composables/useItemsListing";
 import {
   ALBUM_TYPE_FILTER_KEYS,
+  SERIES_FILTERS,
   useListingFilters,
 } from "@/composables/useListingFilters";
 import { useListingCount } from "@/composables/useListingCount";
@@ -488,6 +489,7 @@ import {
   type MediaItem,
   type MediaItemType,
   type ProviderInstance,
+  type SeriesFilter,
   ListingType,
   type Track,
 } from "@/plugins/api/interfaces";
@@ -555,6 +557,8 @@ export interface Props {
   showAlbumTypeFilter?: boolean;
   showProviderFilter?: boolean;
   showCollapseCollections?: boolean;
+  // albums: the "Show" choice of all, the albums in no series, or the series
+  showSeriesFilter?: boolean;
   // when set, the provider filter allows only a single selection at a time
   singleProviderFilter?: boolean;
   // when set, the provider filter is a required single selector: exactly one
@@ -631,6 +635,7 @@ const props = withDefaults(defineProps<Props>(), {
   showAlbumTypeFilter: undefined,
   showProviderFilter: undefined,
   showCollapseCollections: undefined,
+  showSeriesFilter: false,
   singleProviderFilter: false,
   requireProviderSelection: false,
   providerFilterOptions: undefined,
@@ -1046,6 +1051,17 @@ const toggleCollapseCollections = function () {
   loadData(true, undefined, true);
 };
 
+const setSeriesFilter = function (seriesFilter: SeriesFilter) {
+  params.value.seriesFilter = seriesFilter;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "seriesFilter",
+    seriesFilter,
+  );
+  loadData(true, undefined, true);
+};
+
 const toggleHideEmptyFilter = function () {
   const current = params.value.hideEmptyFilter;
   // cycle: undefined/false (all) → true (hide empty) → null (defaults only) → false (all)
@@ -1411,6 +1427,7 @@ const hasActiveFilters = computed(() => {
     p.libraryOnly ||
     p.albumArtistsFilter ||
     (props.showCollapseCollections && p.collapseCollections) ||
+    (props.showSeriesFilter && p.seriesFilter && p.seriesFilter !== "all") ||
     p.hideFullyPlayed ||
     // a required selector always has a provider chosen — that is not a "filter"
     (!props.requireProviderSelection && p.provider && p.provider.length > 0) ||
@@ -1635,6 +1652,7 @@ const listingFilters = useListingFilters(
     toggleLibraryOnly: toggleLibraryOnlyFilter,
     toggleHideFullyPlayed: toggleHideFullyPlayedFilter,
     toggleCollapseCollections: toggleCollapseCollections,
+    setSeriesFilter: setSeriesFilter,
     setHideEmpty: setHideEmptyFilter,
     toggleGenre: toggleGenreFilter,
     setGenres: setGenreFilter,
@@ -1758,11 +1776,29 @@ const filterMenuItems = function () {
   // collapse collections filter
   if (props.showCollapseCollections === true) {
     items.push({
-      label: "tooltip.collapse_collections",
+      label: props.showSeriesFilter
+        ? "listing_filters.group_by_series"
+        : "tooltip.collapse_collections",
       icon: Files,
       action: toggleCollapseCollections,
       active: params.value.collapseCollections,
       overflowAllowed: true,
+    });
+  }
+
+  // albums: all of them, those in no series, or those in a series
+  if (props.showSeriesFilter) {
+    items.push({
+      label: "listing_filters.series_shown",
+      icon: LibraryBig,
+      active:
+        !!params.value.seriesFilter && params.value.seriesFilter !== "all",
+      overflowAllowed: true,
+      subItems: SERIES_FILTERS.map((value) => ({
+        label: `listing_filters.series_filter.${value}`,
+        selected: (params.value.seriesFilter ?? "all") === value,
+        action: () => setSeriesFilter(value),
+      })),
     });
   }
 
@@ -2054,6 +2090,11 @@ const restoreSettings = async function () {
   // get stored/default collapse Collection for this itemtype
   if (props.showCollapseCollections !== false) {
     params.value.collapseCollections = Boolean(prefs.collapseCollections);
+  }
+
+  // get stored/default series filter for this itemtype
+  if (props.showSeriesFilter) {
+    params.value.seriesFilter = prefs.seriesFilter;
   }
 
   // get stored/default hideEmptyFilter for this itemtype (default: true = hide empty)

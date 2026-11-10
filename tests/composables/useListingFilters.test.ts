@@ -18,6 +18,7 @@ const actions: ListingFilterActions = {
   toggleLibraryOnly: vi.fn(),
   toggleHideFullyPlayed: vi.fn(),
   toggleCollapseCollections: vi.fn(),
+  setSeriesFilter: vi.fn(),
   setHideEmpty: vi.fn(),
   toggleGenre: vi.fn(),
   setGenres: vi.fn(),

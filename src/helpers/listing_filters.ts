@@ -125,6 +125,12 @@ const FILTER_RESETS: {
     pref: "collapseCollections",
     value: () => false,
   },
+  {
+    id: "series_filter",
+    param: "seriesFilter",
+    pref: "seriesFilter",
+    value: () => undefined,
+  },
   // hiding empty genres is where the genres listing starts
   {
     id: "genres_shown",

@@ -5,6 +5,7 @@ import {
   ListingType,
   MediaItemType,
   ProviderInstance,
+  type SeriesFilter,
   SortDirection,
   SortField,
   SortOptionInfo,
@@ -37,6 +38,8 @@ export interface LoadDataParams {
   albumType?: string[];
   provider?: string[];
   collapseCollections?: boolean;
+  // albums: all of them, those in no series, or those in a series
+  seriesFilter?: SeriesFilter;
 }
 
 export interface StoredState {

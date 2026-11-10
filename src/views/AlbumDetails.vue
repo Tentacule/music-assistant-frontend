@@ -9,11 +9,12 @@
       :tracks-sort-field="tracksListing?.[0]?.sortField"
       :tracks-sort-direction="tracksListing?.[0]?.sortDirection"
       :catalog-numbers="currentEnrichment?.catalog_numbers"
-      :series-info="seriesInfo"
       @edit-rows="rowsEditorOpen = true"
     />
 
     <template v-if="itemDetails">
+      <!-- the series the album is part of, between the hero and the rows -->
+      <AlbumSeriesLinks :album="itemDetails" />
       <template v-for="rowId in visibleRows" :key="rowId">
         <!-- the album's tracks -->
         <ItemsListing
@@ -116,6 +117,7 @@ import {
   loadAlbumTracks,
 } from "@/components/album/albumData";
 import AlbumHero from "@/components/album/AlbumHero.vue";
+import AlbumSeriesLinks from "@/components/album/AlbumSeriesLinks.vue";
 import {
   albumRows,
   availableAlbumRowIds,
@@ -207,7 +209,6 @@ const albumForRows = computed<Album | undefined>(() => {
 const {
   versionItems,
   versionEnrichmentByMbId,
-  seriesInfo,
   artistReleaseItems,
   moreFromArtistSource,
   moreFromArtistSourceDisplay,

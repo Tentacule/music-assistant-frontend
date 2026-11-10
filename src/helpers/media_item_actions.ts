@@ -5,7 +5,11 @@ import {
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
-import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
+import {
+  getCollectionMediaTypeFromItemId,
+  isMusicBrainzItem,
+  itemIsAvailable,
+} from "@/plugins/api/helpers";
 import {
   BrowseFolder,
   MediaItemType,
@@ -169,7 +173,11 @@ export const handleMediaItemClick = async function (
   // open menu for collection items
   if (item.media_type == MediaType.COLLECTION) {
     router.push({
-      name: "collection",
+      // an album series has a page of its own, the other collections are audiobooks
+      name:
+        getCollectionMediaTypeFromItemId(item.item_id) === MediaType.ALBUM
+          ? "albumseries"
+          : "collection",
       params: {
         itemId: item.item_id,
         provider: item.provider,
