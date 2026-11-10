@@ -2,11 +2,15 @@ import { computed, type Ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import type { LoadDataParams } from "@/composables/useItemsListing";
+import type { SeriesFilter } from "@/plugins/api/interfaces";
 import type {
   ListingFilter,
   ListingFilterOption,
 } from "@/helpers/listing_filters";
 import { EyeOff, Files, Heart, LibraryBig, MicVocal } from "@lucide/vue";
+
+/** What an album listing can keep: all, the albums in no series, the series. */
+export const SERIES_FILTERS: SeriesFilter[] = ["all", "albums", "series"];
 
 /** The album types a listing can be narrowed to, in the order they are offered. */
 export const ALBUM_TYPE_FILTER_KEYS = [
@@ -45,6 +49,8 @@ interface ListingFilterFlags {
   showLibraryOnlyFilter?: boolean;
   showHideFullyPlayedFilter?: boolean;
   showCollapseCollections?: boolean;
+  // albums: group by series and show all, the albums in no series, or the series
+  showSeriesFilter?: boolean;
   showHideEmptyFilter?: boolean;
   showGenreFilter?: boolean;
   showAlbumTypeFilter?: boolean;
@@ -64,6 +70,7 @@ export interface ListingFilterActions {
   toggleLibraryOnly: () => void;
   toggleHideFullyPlayed: () => void;
   toggleCollapseCollections: () => void;
+  setSeriesFilter: (seriesFilter: SeriesFilter) => void;
   setHideEmpty: (hideEmpty: boolean | null) => void;
   toggleGenre: (genreId: number) => void;
   setGenres: (genreIds: number[]) => void;
@@ -136,10 +143,27 @@ export function useListingFilters(
       filters.push({
         kind: "toggle",
         id: "collapse_collections",
-        label: t("listing_filters.collapse_collections"),
+        // the collections of albums are their series
+        label: flags.showSeriesFilter
+          ? t("listing_filters.group_by_series")
+          : t("listing_filters.collapse_collections"),
         icon: Files,
         active: !!params.collapseCollections,
         toggle: actions.toggleCollapseCollections,
+      });
+    }
+    if (flags.showSeriesFilter) {
+      filters.push({
+        kind: "choice",
+        id: "series_filter",
+        label: t("listing_filters.series_shown"),
+        options: SERIES_FILTERS.map((value) => ({
+          label: t(`listing_filters.series_filter.${value}`),
+          value,
+        })),
+        selected: params.seriesFilter ?? "all",
+        unfiltered: "all",
+        select: (value) => actions.setSeriesFilter(value as SeriesFilter),
       });
     }
     if (flags.showHideEmptyFilter) {

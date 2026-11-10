@@ -9,6 +9,8 @@ import {
   type Album,
   type Artist,
   type ItemMapping,
+  type MediaCollection,
+  type SeriesFilter,
   type SortDirection,
   type SortField,
   type Track,
@@ -33,6 +35,55 @@ interface ArtistAlbumsListingOptions {
   sortDirection?: SortDirection;
   albumTypes?: AlbumType[];
   favoritesOnly?: boolean;
+}
+
+interface ArtistAlbumPageOptions extends ArtistAlbumsListingOptions {
+  // group the albums of a series as one item
+  collapseCollections?: boolean;
+  seriesFilter?: SeriesFilter;
+}
+
+/**
+ * One page of an artist's releases from one source, like artistAlbumsBySource,
+ * with the library albums optionally grouped per series or narrowed to the
+ * albums in (no) series. A provider's albums are in no series.
+ */
+export async function artistAlbumPageBySource(
+  artist: Artist,
+  source: RowSource,
+  options: ArtistAlbumPageOptions,
+): Promise<(Album | MediaCollection<Album>)[]> {
+  const target = artistIdOnSource(artist, source);
+  if (!target) return [];
+  return await api.getArtistAlbumsAndSeries(target.itemId, target.provider, {
+    search: options.search,
+    limit: options.limit,
+    offset: options.offset,
+    sort_field: options.sortField,
+    sort_direction: options.sortDirection,
+    album_types: options.albumTypes,
+    favorite: options.favoritesOnly || undefined,
+    collapse_collections: options.collapseCollections || undefined,
+    series_filter: options.seriesFilter,
+  });
+}
+
+/** The artist's id on a source: its own for the library, a mapping's otherwise. */
+function artistIdOnSource(
+  artist: ItemMapping | Artist,
+  source: RowSource,
+): { itemId: string; provider: string } | undefined {
+  if (source === "library" || artist.provider !== "library") {
+    return { itemId: artist.item_id, provider: artist.provider };
+  }
+  const mappings =
+    "provider_mappings" in artist ? artist.provider_mappings : [];
+  const mapping = mappings.find(
+    (candidate) => candidate.provider_instance === source,
+  );
+  return mapping
+    ? { itemId: mapping.item_id, provider: mapping.provider_instance }
+    : undefined;
 }
 
 /**
@@ -65,16 +116,9 @@ export async function artistAlbumsBySource(
           options.favoritesOnly || undefined,
         )
       : api.getArtistAlbums(itemId, provider, undefined, undefined, 0);
-  if (source === "library" || artist.provider !== "library") {
-    return await getAlbums(artist.item_id, artist.provider);
-  }
-  const mappings =
-    "provider_mappings" in artist ? artist.provider_mappings : [];
-  const mapping = mappings.find(
-    (candidate) => candidate.provider_instance === source,
-  );
-  if (!mapping) return [];
-  return await getAlbums(mapping.item_id, mapping.provider_instance);
+  const target = artistIdOnSource(artist, source);
+  if (!target) return [];
+  return await getAlbums(target.itemId, target.provider);
 }
 
 /**

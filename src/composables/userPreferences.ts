@@ -1,6 +1,6 @@
 import { computed, ComputedRef, toRaw } from "vue";
 import { api, type CommandOptions } from "@/plugins/api";
-import { Scope } from "@/plugins/api/interfaces";
+import { Scope, type SeriesFilter } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { defaultShowActions } from "@/helpers/grid_size";
@@ -20,6 +20,7 @@ export interface ItemsListingPreferences {
   expand?: boolean;
   search?: string;
   collapseCollections?: boolean;
+  seriesFilter?: SeriesFilter;
   activeTab?: string;
 }
 

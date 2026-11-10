@@ -46,6 +46,7 @@ export function returnedByHistory(router: Router): boolean {
 // browsed from the audiobooks listing, which is where their route nests too.
 const LISTING_ROUTES: Record<string, string | undefined> = {
   album: "albums",
+  albumseries: "albums",
   artist: "artists",
   artistlisting: "artists",
   audiobook: "audiobooks",

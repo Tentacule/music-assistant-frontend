@@ -18,7 +18,6 @@ import { getDeviceName, itemSupportsPlayLog } from "./helpers";
 import {
   type Album,
   type AlbumGroupInfo,
-  type AlbumSeriesInfo,
   type AlbumVersionEnrichment,
   type AnnouncementTtsEngine,
   type Artist,
@@ -87,6 +86,7 @@ import {
   RepeatMode,
   Role,
   Scope,
+  type SeriesFilter,
   NetworkShareSettings,
   SearchResults,
   ShareType,
@@ -833,6 +833,32 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * The albums of an artist, like getArtistAlbums, optionally narrowed to the
+   * albums in (no) series and with the albums of a series grouped as one.
+   */
+  public getArtistAlbumsAndSeries(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    options: {
+      search?: string;
+      limit?: number;
+      offset?: number;
+      sort_field?: SortField;
+      sort_direction?: SortDirection;
+      album_types?: AlbumType[];
+      favorite?: boolean;
+      collapse_collections?: boolean;
+      series_filter?: SeriesFilter;
+    },
+  ): Promise<(Album | MediaCollection<Album>)[]> {
+    return this.sendCommand("music/album_groups/artist_albums", {
+      item_id,
+      provider_instance_id_or_domain,
+      ...options,
+    });
+  }
+
   public getArtistAppearsOn(
     item_id: string,
     provider_instance_id_or_domain: string,
@@ -968,7 +994,9 @@ export class MusicAssistantApi {
    * @param sort_direction - Sort direction
    * @param album_types - Filter by album types
    * @param provider - Filter by provider instance ID or domain (single string or list)
-   * @returns Promise resolving to array of albums
+   * @param collapse_collections - Return the albums of a series as one collection
+   * @param series_filter - "albums" for the albums in no series, "series" for those in one
+   * @returns Promise resolving to array of albums (and series when collapsed)
    */
   public getLibraryAlbums(
     favorite?: boolean,
@@ -980,7 +1008,35 @@ export class MusicAssistantApi {
     album_types?: Array<AlbumType | string>,
     provider?: string | string[],
     genre?: number | number[],
-  ): Promise<Album[]> {
+    collapse_collections?: false,
+    series_filter?: SeriesFilter,
+  ): Promise<Album[]>;
+  public getLibraryAlbums(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    album_types?: Array<AlbumType | string>,
+    provider?: string | string[],
+    genre?: number | number[],
+    collapse_collections?: boolean,
+    series_filter?: SeriesFilter,
+  ): Promise<(Album | MediaCollection<Album>)[]>;
+  public getLibraryAlbums(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    album_types?: Array<AlbumType | string>,
+    provider?: string | string[],
+    genre?: number | number[],
+    collapse_collections?: boolean,
+    series_filter?: SeriesFilter,
+  ): Promise<(Album | MediaCollection<Album>)[]> {
     return this.sendCommand("music/album_groups/library_items", {
       favorite,
       search,
@@ -991,6 +1047,21 @@ export class MusicAssistantApi {
       album_types,
       provider,
       genre,
+      collapse_collections,
+      series_filter,
+    });
+  }
+
+  /** An album series with its albums, in the series order unless a sort is given. */
+  public getAlbumSeries(
+    item_id: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+  ): Promise<MediaCollection<Album>> {
+    return this.sendCommand("music/albums/get_collection", {
+      item_id,
+      sort_field,
+      sort_direction,
     });
   }
 
@@ -1069,14 +1140,6 @@ export class MusicAssistantApi {
     return this.sendCommand("music/albums/versions_enrichment", {
       item_id,
       provider_instance_id_or_domain,
-    });
-  }
-
-  public getReleaseGroupSeries(
-    release_group_id: string,
-  ): Promise<AlbumSeriesInfo | null> {
-    return this.sendCommand("music/albums/release_group_series", {
-      release_group_id,
     });
   }
 

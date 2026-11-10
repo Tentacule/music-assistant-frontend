@@ -230,6 +230,7 @@ export enum ListingType {
   PODCAST_EPISODES = "podcast_episodes",
   GENRE_TRACKS = "genre_tracks",
   GENRE_ALBUMS = "genre_albums",
+  ALBUM_SERIES = "album_series",
   BROWSE = "browse",
 }
 
@@ -1174,12 +1175,8 @@ export interface AlbumVersionEnrichment {
   release_group_id?: string;
 }
 
-export interface AlbumSeriesInfo {
-  release_group_id: string;
-  series_id: string;
-  series_name: string;
-  order_number?: string | null;
-}
+/** Which albums an album listing keeps: all, those in no series, those in a series. */
+export type SeriesFilter = "all" | "albums" | "series";
 
 export interface AudioMetadata {
   // Audio analysis details (e.g. bpm, musical key).

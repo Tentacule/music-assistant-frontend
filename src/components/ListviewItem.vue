@@ -214,7 +214,7 @@
         <span class="sr-only">{{ episodeNumber.label }}</span>
       </div>
       <div v-else-if="item.media_type == MediaType.COLLECTION">
-        {{ $t("collection") }}
+        {{ collectionLabel }}
       </div>
       <!-- description -->
       <div
@@ -346,6 +346,7 @@ import {
   truncateString,
 } from "@/helpers/utils";
 import {
+  getCollectionMediaTypeFromItemId,
   getListItemProviderIconDomain,
   isMusicBrainzItem,
 } from "@/plugins/api/helpers";
@@ -432,6 +433,13 @@ const compProps = withDefaults(defineProps<Props>(), {
 // a release only MusicBrainz knows: muted rather than shown as unavailable,
 // since it can be opened and added to the library
 const notInLibrary = computed(() => isMusicBrainzItem(compProps.item));
+
+// an album collection is a series, the other collections hold audiobooks
+const collectionLabel = computed(() =>
+  getCollectionMediaTypeFromItemId(compProps.item.item_id) === MediaType.ALBUM
+    ? $t("series")
+    : $t("collection"),
+);
 
 const episodeNumber = computed(() =>
   compProps.item.media_type === MediaType.PODCAST_EPISODE

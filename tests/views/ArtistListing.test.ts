@@ -27,7 +27,7 @@ const {
 } = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
   mockGetArtistTracks: vi.fn<MusicAssistantApi["getArtistTracks"]>(),
-  mockGetArtistAlbums: vi.fn<MusicAssistantApi["getArtistAlbums"]>(),
+  mockGetArtistAlbums: vi.fn<MusicAssistantApi["getArtistAlbumsAndSeries"]>(),
   mockGetArtistAppearsOn: vi.fn<MusicAssistantApi["getArtistAppearsOn"]>(),
   mockGetArtistDiscography: vi.fn<MusicAssistantApi["getArtistDiscography"]>(),
   mockReplace: vi.fn(),
@@ -38,7 +38,7 @@ vi.mock("@/plugins/api", () => ({
   api: {
     getArtist: mockGetArtist,
     getArtistTracks: mockGetArtistTracks,
-    getArtistAlbums: mockGetArtistAlbums,
+    getArtistAlbumsAndSeries: mockGetArtistAlbums,
     getArtistAppearsOn: mockGetArtistAppearsOn,
     getArtistDiscography: mockGetArtistDiscography,
     providers: {},
@@ -161,14 +161,17 @@ describe("ArtistListing", () => {
     expect(mockGetArtistAlbums).toHaveBeenCalledWith(
       item.item_id,
       item.provider,
-      undefined,
-      "live",
-      20,
-      40,
-      SortField.YEAR,
-      SortDirection.DESC,
-      [AlbumType.ALBUM],
-      true,
+      {
+        search: "live",
+        limit: 20,
+        offset: 40,
+        sort_field: SortField.YEAR,
+        sort_direction: SortDirection.DESC,
+        album_types: [AlbumType.ALBUM],
+        favorite: true,
+        collapse_collections: undefined,
+        series_filter: undefined,
+      },
     );
   });
 
@@ -188,14 +191,17 @@ describe("ArtistListing", () => {
     expect(mockGetArtistAlbums).toHaveBeenCalledWith(
       item.item_id,
       item.provider,
-      undefined,
-      "",
-      20,
-      0,
-      SortField.SORT_NAME,
-      undefined,
-      [AlbumType.SINGLE, AlbumType.EP],
-      undefined,
+      {
+        search: "",
+        limit: 20,
+        offset: 0,
+        sort_field: SortField.SORT_NAME,
+        sort_direction: undefined,
+        album_types: [AlbumType.SINGLE, AlbumType.EP],
+        favorite: undefined,
+        collapse_collections: undefined,
+        series_filter: undefined,
+      },
     );
   });
 

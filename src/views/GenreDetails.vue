@@ -74,6 +74,8 @@
         :sort-listing="ListingType.LIBRARY_ALBUMS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
+        :show-collapse-collections="true"
+        :show-series-filter="true"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
         :hide-actions-by-default="wasCompact"
@@ -417,6 +419,8 @@ const loadGenreAlbums = async (params: LoadDataParams) => {
     undefined,
     params.provider?.length ? params.provider : undefined,
     genreId(),
+    Boolean(params.collapseCollections),
+    params.seriesFilter,
   );
 };
 

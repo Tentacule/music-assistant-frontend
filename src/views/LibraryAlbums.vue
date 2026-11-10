@@ -18,6 +18,8 @@
     :total="total"
     :show-album-type-filter="true"
     :show-provider-filter="true"
+    :show-collapse-collections="true"
+    :show-series-filter="true"
   />
 </template>
 
@@ -80,10 +82,20 @@ const loadItems = async function (params: LoadDataParams) {
     params.albumType,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    Boolean(params.collapseCollections),
+    params.seriesFilter,
   );
 };
 
 const setTotals = async function (params: LoadDataParams) {
+  // grouped by series, or narrowed to (no) series, the listing counts what it loads
+  if (
+    params.collapseCollections ||
+    (params.seriesFilter && params.seriesFilter !== "all")
+  ) {
+    setTotal(undefined);
+    return;
+  }
   if (!params.favoritesOnly && !params.albumType && !params.provider) {
     setTotal(store.libraryAlbumsCount);
     return;
