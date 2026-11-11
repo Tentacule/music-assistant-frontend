@@ -187,9 +187,7 @@
               >
                 {{ $t("album_type." + item.album_type) }}
               </span>
-              <span v-if="'year' in item && item.year">
-                • {{ item.year }}
-              </span>
+              <span v-if="displayYear(item)"> • {{ displayYear(item) }} </span>
             </v-card-subtitle>
 
             <!-- audiobook author(s) -->
@@ -460,6 +458,7 @@
 </template>
 
 <script setup lang="ts">
+import { displayYear } from "@/helpers/albumYear";
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
 import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import FavoriteMenu from "@/components/FavoriteMenu.vue";

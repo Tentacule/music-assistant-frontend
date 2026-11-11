@@ -1096,6 +1096,8 @@ export interface MediaItemMetadata {
   preview?: string | null;
   popularity?: number | null;
   release_date?: string | null;
+  // albums: the year of the first release of the album (all editions), when known
+  original_year?: number | null;
   // spoken languages of the content, mostly set for audiobooks and podcasts.
   // the spelling is whatever the provider reports, e.g. "en", "en-us" or "English"
   languages?: string[] | null;

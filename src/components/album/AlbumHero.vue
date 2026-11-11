@@ -88,6 +88,7 @@
 </template>
 
 <script setup lang="ts">
+import { albumHeroYears } from "@/helpers/albumYear";
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
@@ -158,7 +159,11 @@ const facts = computed(() => {
   if (album.album_type !== AlbumType.UNKNOWN) {
     parts.push($t(`album_type.${album.album_type}`));
   }
-  if (album.year) parts.push(String(album.year));
+  const years = albumHeroYears(album);
+  if (years.original) parts.push(String(years.original));
+  if (years.edition) {
+    parts.push($t("album_edition_year", { year: years.edition }));
+  }
   if (props.trackCount) {
     parts.push(
       $t("n_tracks", props.trackCount, { named: { count: props.trackCount } }),

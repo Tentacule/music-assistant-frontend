@@ -110,6 +110,7 @@
 </template>
 
 <script setup lang="ts">
+import { displayYear } from "@/helpers/albumYear";
 import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import FavoriteMenu from "@/components/FavoriteMenu.vue";
@@ -234,7 +235,8 @@ const subtitle = function (item: RowItem): string {
   if ("album_type" in item && item.album_type !== AlbumType.UNKNOWN) {
     parts.push($t(`album_type.${item.album_type}`));
   }
-  if ("year" in item && item.year) parts.push(String(item.year));
+  const year = displayYear(item);
+  if (year) parts.push(String(year));
   return parts.join(" · ");
 };
 

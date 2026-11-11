@@ -1,3 +1,4 @@
+import { displayYear } from "@/helpers/albumYear";
 import {
   MediaType,
   type Album,
@@ -51,7 +52,7 @@ export function albumSeriesFacts(
   const facts = [labels.series];
   if (albums.length) facts.push(labels.albums(albums.length));
   const years = albums
-    .map((album) => album.year)
+    .map((album) => displayYear(album))
     .filter((year): year is number => !!year);
   if (years.length) {
     const first = Math.min(...years);

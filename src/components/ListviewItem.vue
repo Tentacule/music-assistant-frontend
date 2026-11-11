@@ -339,6 +339,7 @@
 </template>
 
 <script setup lang="ts">
+import { displayYear } from "@/helpers/albumYear";
 import ArtworkSpinner from "@/components/ArtworkSpinner.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
@@ -488,7 +489,8 @@ const albumSubtitle = computed(() => {
       parts.push(getArtistsString(item.artists));
     }
   }
-  if ("year" in item && item.year) parts.push(String(item.year));
+  const year = displayYear(item);
+  if (year) parts.push(String(year));
   return parts.join(" • ");
 });
 const collabArtists = computed(() => {

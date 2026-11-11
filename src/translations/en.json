@@ -1191,6 +1191,7 @@
     "image_source": "Source",
     "image_make_primary": "Make primary",
     "update_metadata": "Update metadata",
+    "album_edition_year": "edition {year}",
     "set_default_album_version": "Set as default version",
     "set_default_album_version_done": "Default version updated",
     "set_default_album_version_failed": "Could not update the default version",
