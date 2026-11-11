@@ -84,6 +84,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.genreIds,
     Boolean(params.collapseCollections),
     params.seriesFilter,
+    params.randomSeed,
   );
 };
 

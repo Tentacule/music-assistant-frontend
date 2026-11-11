@@ -23,9 +23,13 @@
       :show-album-type-filter="config.showAlbumTypeFilter"
       :show-collapse-collections="config.showSeriesFilter"
       :show-series-filter="config.showSeriesFilter"
+      :album-type-filter-options="config.albumTypeFilterOptions"
+      :album-type-override="config.albumTypeOverride"
       :show-track-number="config.showTrackNumber"
       :show-refresh-button="false"
       :sort-listing="config.sortListing"
+      library-toolbar
+      :show-count="false"
       :load-paged-data="config.loadPagedData"
       :empty-message="config.emptyMessage"
       :restore-state="true"
@@ -42,12 +46,17 @@ import {
   loadArtistTracks,
 } from "@/components/artist/artistData";
 import { artistRows } from "@/components/artist/artistRows";
+import { DISCOGRAPHY_TYPES_QUERY } from "@/components/artist/discographyRows";
 import {
   rowSourceLabel,
   type RowSource,
 } from "@/components/details/rowRegistry";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
+import {
+  DISCOGRAPHY_TYPES,
+  validDiscographyTypes,
+} from "@/helpers/discography_types";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
 import {
@@ -78,6 +87,10 @@ interface ListingConfig {
   showAlbumTypeFilter: boolean;
   // group the library albums by series and narrow them to (no) series
   showSeriesFilter?: boolean;
+  // the album types the filter offers, when not every type
+  albumTypeFilterOptions?: string[];
+  // album types carried in by a link, shown on arrival instead of the saved ones
+  albumTypeOverride?: string[];
   showFavoritesOnlyFilter: boolean;
   showProviderFilter: boolean;
   showTrackNumber: boolean;
@@ -114,11 +127,14 @@ const activeSource = ref<RowSource>();
 // soon as it is read: it is honoured on arrival only, and a return to or
 // reload of this page lands on what the user has picked since
 let linkedSource: string | undefined;
+// the discography types a "view all" link carried in, taken off the url the
+// same way
+let linkedTypes: AlbumType[] | undefined;
 
 watch(
   () => [props.itemId, props.provider],
   async ([itemId, provider]) => {
-    linkedSource = takeLinkedSource();
+    takeLinkedQuery();
     // the listing remounts for the new artist instead of keeping the old items
     itemDetails.value = undefined;
     activeSource.value = undefined;
@@ -136,7 +152,7 @@ watch(
   () => props.listing,
   () => {
     activeSource.value = undefined;
-    linkedSource = takeLinkedSource();
+    takeLinkedQuery();
   },
 );
 
@@ -215,10 +231,12 @@ const config = computed<ListingConfig | undefined>(() => {
     case "discography":
       return {
         ...listingDefaults(),
-        labelKey: artistRows.definition("discography").labelKey,
+        labelKey: "discography",
         path: "artistdiscography",
         sortListing: ListingType.ARTIST_DISCOGRAPHY,
-        showAlbumTypeFilter: false,
+        showAlbumTypeFilter: true,
+        albumTypeFilterOptions: [...DISCOGRAPHY_TYPES],
+        albumTypeOverride: linkedTypes,
         showFavoritesOnlyFilter: false,
         showProviderFilter: false,
         emptyMessage: $t("artist_row_empty"),
@@ -297,14 +315,17 @@ function sourceSelection(rowId: "albums" | "singles_eps") {
   };
 }
 
-/** The source named in the url's query, if any, taken off the url. */
-function takeLinkedSource(): string | undefined {
-  const source = route.query.source;
-  if (typeof source !== "string") return undefined;
-  const query = { ...route.query };
-  delete query.source;
-  router.replace({ query });
-  return source;
+/** Reads the source and discography types a link carried in, off the url. */
+function takeLinkedQuery() {
+  const { source, [DISCOGRAPHY_TYPES_QUERY]: types, ...rest } = route.query;
+  linkedSource = typeof source === "string" ? source : undefined;
+  linkedTypes =
+    typeof types === "string"
+      ? validDiscographyTypes(types.split(","))
+      : undefined;
+  if (source !== undefined || types !== undefined) {
+    router.replace({ query: rest });
+  }
 }
 
 /**
@@ -350,14 +371,19 @@ async function loadArtistAlbumPage(
   });
 }
 
-/** Everything MusicBrainz credits to the artist; only a library artist has one. */
+/**
+ * Everything MusicBrainz credits to the artist, of the filtered types when any;
+ * only a library artist has one.
+ */
 async function loadDiscography(
   params: LoadDataParams,
 ): Promise<MediaItemType[]> {
   const artist = itemDetails.value;
   if (artist?.provider !== "library") return [];
+  const albumTypes = validDiscographyTypes(params.albumType);
   return await loadArtistDiscography(
     artist,
+    albumTypes.length ? albumTypes : undefined,
     params.search,
     params.limit,
     params.offset,
