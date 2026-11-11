@@ -355,6 +355,7 @@ import {
   radioSupported,
 } from "@/helpers/radio";
 import {
+  getCollectionMediaTypeFromItemId,
   getPlaylistMigrationProviders,
   isAudioSource,
   isItemInLibrary,
@@ -401,6 +402,8 @@ import {
   ArrowUpToLine,
   Disc3,
   Download,
+  Eye,
+  EyeOff,
   Folder,
   Heart,
   History,
@@ -1259,6 +1262,35 @@ export const getContextMenuItems = async function (
         icon: Star,
       });
     }
+  }
+  // an album series can be hidden from the series list, and shown again
+  if (
+    items.length === 1 &&
+    canEditLibrary &&
+    items[0].media_type === MediaType.COLLECTION &&
+    getCollectionMediaTypeFromItemId(items[0].item_id) === MediaType.ALBUM
+  ) {
+    const seriesId = items[0].item_id;
+    const hiddenSeries = await api
+      .getHiddenAlbumSeries()
+      .catch((): string[] => []);
+    const hidden = hiddenSeries.includes(seriesId);
+    contextMenuItems.push({
+      label: hidden ? "show_album_series" : "hide_album_series",
+      labelArgs: [],
+      action: async () => {
+        try {
+          await api.setAlbumSeriesHidden(seriesId, !hidden);
+          toast.success(
+            $t(hidden ? "show_album_series_done" : "hide_album_series_done"),
+          );
+          eventbus.emit("albumSeriesHiddenChanged");
+        } catch {
+          toast.error($t("album_series_hidden_failed"));
+        }
+      },
+      icon: hidden ? Eye : EyeOff,
+    });
   }
   // edit item (for builtin provider items that support editing)
   if (

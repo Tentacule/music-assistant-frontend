@@ -1096,6 +1096,40 @@ export class MusicAssistantApi {
     });
   }
 
+  /** The album series of the library: the shown ones, or the hidden ones. */
+  public getAlbumSeriesList(
+    hidden = false,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    random_seed?: number,
+  ): Promise<MediaCollection<Album>[]> {
+    return this.sendCommand("music/album_groups/series", {
+      hidden,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
+      ...(random_seed === undefined ? {} : { random_seed }),
+    });
+  }
+
+  /** The item ids of the album series hidden from the series list. */
+  public getHiddenAlbumSeries(): Promise<string[]> {
+    return this.sendCommand("music/album_groups/hidden_series");
+  }
+
+  /** Hide an album series from the series list, or show it again. */
+  public setAlbumSeriesHidden(item_id: string, hidden: boolean): Promise<void> {
+    return this.sendCommand("music/album_groups/set_series_hidden", {
+      item_id,
+      hidden,
+    });
+  }
+
   public getAlbum(
     item_id: string,
     provider_instance_id_or_domain: string,

@@ -877,6 +877,44 @@ describe("MusicAssistantApi error handling", () => {
     await expect(request).resolves.toEqual([]);
   });
 
+  it("lists the shown or the hidden album series", async () => {
+    const request = api.getAlbumSeriesList(true, "saga", 20, 40);
+
+    expect(transport.lastCommand.command).toBe("music/album_groups/series");
+    expect(transport.lastCommand.args).toEqual({
+      hidden: true,
+      search: "saga",
+      limit: 20,
+      offset: 40,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("hides an album series from the series list", async () => {
+    const request = api.setAlbumSeriesHidden("album___Saga", true);
+
+    expect(transport.lastCommand.command).toBe(
+      "music/album_groups/set_series_hidden",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "album___Saga",
+      hidden: true,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: null,
+      partial: false,
+    });
+    await expect(request).resolves.toBeNull();
+  });
+
   it("sends typed paging parameters for artist discography", async () => {
     const request = api.getArtistDiscography(
       "artist-1",

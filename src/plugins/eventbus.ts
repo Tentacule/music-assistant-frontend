@@ -155,6 +155,8 @@ export type Events = {
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;
   genreExcluded: void;
+  // an album series was hidden from the series list, or shown again
+  albumSeriesHiddenChanged: void;
   "mobile-sidebar-open": void;
 };
 
