@@ -291,8 +291,13 @@ function aggregatedProviderFilter(
   return artist.provider === "library" ? providerFilterFor(source) : undefined;
 }
 
-/** Sortable release timestamp: the release date, else the release year. */
+/**
+ * Sortable release timestamp: the first release of the album, else the release date of the
+ * edition, else its year.
+ */
 function releaseTime(album: Album): number {
+  const original = album.metadata?.original_year;
+  if (original) return Date.UTC(original, 0, 1);
   const releaseDate = album.metadata?.release_date;
   if (releaseDate) {
     const parsed = Date.parse(releaseDate);

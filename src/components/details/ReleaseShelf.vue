@@ -55,8 +55,8 @@
             overlay
             class="release-shelf__explicit"
           />
-          <span v-if="item.year" class="release-shelf__year">{{
-            item.year
+          <span v-if="displayYear(item)" class="release-shelf__year">{{
+            displayYear(item)
           }}</span>
         </template>
         <template #subtitle>{{ subtitle(item) }}</template>
@@ -75,6 +75,7 @@
 </template>
 
 <script setup lang="ts">
+import { displayYear } from "@/helpers/albumYear";
 import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import type { RowSource, SourceOption } from "@/components/details/rowRegistry";

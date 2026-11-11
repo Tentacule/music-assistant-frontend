@@ -295,6 +295,12 @@ export const routes: RouteRecordRaw[] = [
         ],
       },
       {
+        path: "/series",
+        name: "series",
+        component: () =>
+          import(/* webpackChunkName: "series" */ "@/views/LibrarySeries.vue"),
+      },
+      {
         path: "/albums",
         children: [
           {
