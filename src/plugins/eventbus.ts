@@ -3,7 +3,9 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import mitt, { Emitter } from "mitt";
 import {
+  Album,
   ConfigValueType,
+  MediaCollection,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
@@ -134,6 +136,15 @@ export type SetupFlowDialogEvent =
     }
   | { kind: "player"; playerId: string; onFlowEnded?: SetupFlowEndedCallback };
 
+// create an album series, add an album to one (or renumber it there), or
+// change the type of a series
+export type AlbumSeriesDialogEvent = {
+  mode: "create" | "add" | "sequence" | "type";
+  album?: Album;
+  series?: MediaCollection<Album>;
+  sequence?: number | string | null;
+};
+
 export type Events = {
   contextmenu: ContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
@@ -157,6 +168,9 @@ export type Events = {
   genreExcluded: void;
   // an album series was hidden from the series list, or shown again
   albumSeriesHiddenChanged: void;
+  albumSeriesDialog: AlbumSeriesDialogEvent;
+  // a series was created, deleted or retyped, or an album went in or out of one
+  albumSeriesChanged: void;
   "mobile-sidebar-open": void;
 };
 

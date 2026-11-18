@@ -22,6 +22,7 @@
             <component :is="Component" />
           </router-view>
           <add-to-playlist-dialog />
+          <album-series-dialog />
           <audio-overlay-dialog />
           <create-playlist-dialog />
           <create-smart-playlist-dialog />
@@ -80,6 +81,7 @@ import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
+import AlbumSeriesDialog from "./AlbumSeriesDialog.vue";
 import AudioOverlayDialog from "./AudioOverlayDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
 import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";

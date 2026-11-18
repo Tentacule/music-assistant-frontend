@@ -27,6 +27,7 @@ import { StatisticsApi } from "./statistics";
 import {
   type Album,
   type AlbumGroupInfo,
+  type AlbumVisibility,
   type AlbumVersionEnrichment,
   type AnnouncementTtsEngine,
   type Artist,
@@ -61,6 +62,7 @@ import {
   type SortOptionInfo,
   type User,
   type UserSummary,
+  AlbumSeriesType,
   AlbumType,
   Audiobook,
   AuthExchangeResult,
@@ -1088,11 +1090,13 @@ export class MusicAssistantApi {
     item_id: string,
     sort_field?: SortField,
     sort_direction?: SortDirection,
+    album_visibility: AlbumVisibility = "visible",
   ): Promise<MediaCollection<Album>> {
     return this.sendCommand("music/albums/get_collection", {
       item_id,
       sort_field,
       sort_direction,
+      album_visibility,
     });
   }
 
@@ -1105,6 +1109,7 @@ export class MusicAssistantApi {
     sort_field?: SortField,
     sort_direction?: SortDirection,
     random_seed?: number,
+    series_type?: AlbumSeriesType,
   ): Promise<MediaCollection<Album>[]> {
     return this.sendCommand("music/album_groups/series", {
       hidden,
@@ -1114,6 +1119,72 @@ export class MusicAssistantApi {
       sort_field,
       sort_direction,
       ...(random_seed === undefined ? {} : { random_seed }),
+      ...(series_type ? { series_type } : {}),
+    });
+  }
+
+  /** Create an album series of the user's own, empty until albums are added. */
+  public createAlbumSeries(
+    name: string,
+    series_type: AlbumSeriesType = AlbumSeriesType.PERSONAL,
+  ): Promise<MediaCollection<Album>> {
+    return this.sendCommand("music/album_groups/create_series", {
+      name,
+      series_type,
+    });
+  }
+
+  /** Set the type of an album series, which a metadata refresh keeps. */
+  public setAlbumSeriesType(
+    item_id: string,
+    series_type: AlbumSeriesType,
+  ): Promise<void> {
+    return this.sendCommand("music/album_groups/set_series_type", {
+      item_id,
+      series_type,
+    });
+  }
+
+  /** Delete an album series of the user's own. */
+  public deleteAlbumSeries(item_id: string): Promise<void> {
+    return this.sendCommand("music/album_groups/delete_series", { item_id });
+  }
+
+  /** Add a library album to a series, or give it a new number in it. */
+  public addAlbumToSeries(
+    item_id: string,
+    album_id: string,
+    sequence?: string | null,
+  ): Promise<void> {
+    return this.sendCommand("music/album_groups/add_series_album", {
+      item_id,
+      album_id,
+      sequence: sequence?.trim() ? sequence.trim() : null,
+    });
+  }
+
+  /**
+   * Take a library album out of a series. It leaves a series of the user's own,
+   * and is hidden in a MusicBrainz series, so a metadata refresh keeps it out.
+   */
+  public removeAlbumFromSeries(
+    item_id: string,
+    album_id: string,
+  ): Promise<void> {
+    return this.sendCommand("music/album_groups/remove_series_album", {
+      item_id,
+      album_id,
+    });
+  }
+
+  /** Put an album removed from a MusicBrainz series back in it, at its number. */
+  public restoreAlbumInSeries(
+    item_id: string,
+    album_id: string,
+  ): Promise<void> {
+    return this.sendCommand("music/album_groups/restore_series_album", {
+      item_id,
+      album_id,
     });
   }
 

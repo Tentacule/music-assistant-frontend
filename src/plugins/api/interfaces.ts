@@ -303,6 +303,20 @@ export enum AlbumType {
   UNKNOWN = "unknown",
 }
 
+export enum AlbumSeriesType {
+  ALBUM_SERIES = "album_series",
+  RANKED_LIST = "ranked_list",
+  PERSONAL = "personal",
+}
+
+export enum AlbumSeriesSource {
+  MUSICBRAINZ = "musicbrainz",
+  CUSTOM = "custom",
+}
+
+/** Which albums of a series are listed: those in it, those removed from it, or both. */
+export type AlbumVisibility = "visible" | "hidden" | "all";
+
 export enum ArtistType {
   SINGER = "singer",
   AUTHOR = "author",
@@ -1364,6 +1378,10 @@ export interface MediaCollectionMetadata extends MediaItemMetadata {
   duration: number | null;
   fully_played: boolean | null;
   in_progress: boolean | null;
+  // album series only: its type, where it comes from and the albums removed from it
+  series_type?: AlbumSeriesType | null;
+  series_source?: AlbumSeriesSource | null;
+  hidden_item_ids?: string[] | null;
 }
 
 export interface MediaCollection<M extends MediaItemType> extends MediaItem {

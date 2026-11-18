@@ -331,6 +331,7 @@ import {
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
 import { runWithConcurrency } from "@/helpers/concurrency";
+import { albumSeriesMenuItems } from "@/layouts/default/albumSeriesMenuItems";
 import {
   FAVORITABLE_MEDIA_TYPES,
   favoriteState,
@@ -1292,6 +1293,10 @@ export const getContextMenuItems = async function (
       icon: hidden ? Eye : EyeOff,
     });
   }
+  // add an album to a series, edit it within its series, or edit a series
+  contextMenuItems.push(
+    ...albumSeriesMenuItems(items, parentItem, canEditLibrary),
+  );
   // edit item (for builtin provider items that support editing)
   if (
     items.length === 1 &&

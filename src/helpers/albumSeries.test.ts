@@ -4,10 +4,20 @@ import {
   albumSeriesArtists,
   albumSeriesFacts,
   albumSeriesItemId,
+  albumSeriesKind,
   albumSeriesLabel,
   albumSeriesRoute,
+  isAlbumSeries,
+  seriesSequenceOf,
 } from "@/helpers/albumSeries";
-import type { Album } from "@/plugins/api/interfaces";
+import {
+  AlbumSeriesSource,
+  AlbumSeriesType,
+  MediaType,
+  type Album,
+  type MediaCollection,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 
 const album = (name: string, year?: number, artists: string[] = []) =>
   ({
@@ -61,5 +71,66 @@ describe("albumSeries", () => {
       "1 albums",
     ]);
     expect(albumSeriesFacts([], labels)).toEqual(["Series"]);
+  });
+});
+
+describe("album series editing", () => {
+  const series = (metadata: object) =>
+    ({
+      item_id: "album___Best of",
+      media_type: MediaType.COLLECTION,
+      name: "Best of",
+      items: [],
+      metadata,
+    }) as unknown as MediaCollection<Album>;
+
+  it("tells an album series from an audiobook collection", () => {
+    expect(isAlbumSeries(series({}))).toBe(true);
+    expect(
+      isAlbumSeries({
+        item_id: "audiobook___Saga",
+        media_type: MediaType.COLLECTION,
+      } as unknown as MediaItemType),
+    ).toBe(false);
+    expect(
+      isAlbumSeries({
+        item_id: "album___x",
+        media_type: MediaType.ALBUM,
+      } as unknown as MediaItemType),
+    ).toBe(false);
+  });
+
+  it("finds the number of an album in a series", () => {
+    const listed = {
+      metadata: { collections: [{ title: "Best of", sequence: 3 }] },
+    } as unknown as Album;
+    expect(seriesSequenceOf(listed, "Best of")).toBe(3);
+    expect(seriesSequenceOf(listed, "Other")).toBeNull();
+  });
+
+  it("describes the type, source and hidden albums of a series", () => {
+    const kindLabels = {
+      types: {
+        [AlbumSeriesType.ALBUM_SERIES]: "Album series",
+        [AlbumSeriesType.RANKED_LIST]: "Ranked list",
+        [AlbumSeriesType.PERSONAL]: "Personal",
+      },
+      sources: {
+        [AlbumSeriesSource.MUSICBRAINZ]: "MusicBrainz",
+        [AlbumSeriesSource.CUSTOM]: "Custom",
+      },
+      hidden: (count: number) => `${count} hidden`,
+    };
+    expect(
+      albumSeriesKind(
+        series({
+          series_type: AlbumSeriesType.RANKED_LIST,
+          series_source: AlbumSeriesSource.MUSICBRAINZ,
+          hidden_item_ids: ["1", "2"],
+        }),
+        kindLabels,
+      ),
+    ).toEqual(["Ranked list", "MusicBrainz", "2 hidden"]);
+    expect(albumSeriesKind(series({}), kindLabels)).toEqual([]);
   });
 });

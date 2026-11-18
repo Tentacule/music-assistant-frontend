@@ -38,6 +38,7 @@
               <span class="min-w-0 truncate">{{ artists.join(" / ") }}</span>
             </div>
             <DetailHeroFacts :icon="LibraryBig" :facts="facts" />
+            <DetailHeroFacts v-if="kind.length" :icon="Tags" :facts="kind" />
           </div>
 
           <div class="flex min-w-0 items-center">
@@ -54,16 +55,22 @@ import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import MediaCollectionThumb from "@/components/MediaCollectionThumb.vue";
-import { albumSeriesFacts, albumSeriesArtists } from "@/helpers/albumSeries";
+import {
+  albumSeriesArtists,
+  albumSeriesFacts,
+  albumSeriesKind,
+} from "@/helpers/albumSeries";
 import { getImageThumbForItem } from "@/helpers/utils";
 import {
+  AlbumSeriesSource,
+  AlbumSeriesType,
   ImageType,
   type Album,
   type MediaCollection,
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
-import { LibraryBig, Music } from "@lucide/vue";
+import { LibraryBig, Music, Tags } from "@lucide/vue";
 import { computed } from "vue";
 
 export interface Props {
@@ -95,5 +102,26 @@ const facts = computed(() =>
     series: $t("series"),
     albums: (count) => $t("n_albums", count, { named: { count } }),
   }),
+);
+
+// "Ranked list · MusicBrainz · 2 hidden": what kind of series this is
+const kind = computed(() =>
+  props.item
+    ? albumSeriesKind(props.item, {
+        types: {
+          [AlbumSeriesType.ALBUM_SERIES]: $t("album_series_types.album_series"),
+          [AlbumSeriesType.RANKED_LIST]: $t("album_series_types.ranked_list"),
+          [AlbumSeriesType.PERSONAL]: $t("album_series_types.personal"),
+        },
+        sources: {
+          [AlbumSeriesSource.MUSICBRAINZ]: $t(
+            "album_series_sources.musicbrainz",
+          ),
+          [AlbumSeriesSource.CUSTOM]: $t("album_series_sources.custom"),
+        },
+        hidden: (count) =>
+          $t("album_series_hidden_count", count, { named: { count } }),
+      })
+    : [],
 );
 </script>
