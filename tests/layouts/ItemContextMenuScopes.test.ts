@@ -34,6 +34,7 @@ const { apiMock, hasScope, storeMock } = vi.hoisted(() => ({
     } as Record<string, unknown>,
     getProvider: vi.fn(),
     getLibraryItem: vi.fn(),
+    getAlbumGroupInfo: vi.fn().mockResolvedValue({ can_set_default: false }),
     sendCommand: vi.fn(),
     providerManifests: {},
     players: {},
