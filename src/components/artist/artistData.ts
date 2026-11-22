@@ -16,6 +16,20 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 
+export const ARTIST_RELEASE_TYPES: Record<
+  "albums" | "singles_eps",
+  AlbumType[]
+> = {
+  albums: [
+    AlbumType.ALBUM,
+    AlbumType.COMPILATION,
+    AlbumType.LIVE,
+    AlbumType.SOUNDTRACK,
+    AlbumType.UNKNOWN,
+  ],
+  singles_eps: [AlbumType.SINGLE, AlbumType.EP],
+};
+
 /**
  * The artist's releases, from the library or from a single provider's own
  * catalog. See artistAlbumsBySource for how `source` selects the provider.
@@ -23,8 +37,9 @@ import {
 export async function loadArtistReleases(
   artist: Artist,
   source: RowSource,
+  options?: ArtistAlbumsListingOptions,
 ): Promise<Album[]> {
-  return await artistAlbumsBySource(artist, source);
+  return await artistAlbumsBySource(artist, source, options);
 }
 
 interface ArtistAlbumsListingOptions {
@@ -53,7 +68,7 @@ export async function artistAlbumPageBySource(
   source: RowSource,
   options: ArtistAlbumPageOptions,
 ): Promise<(Album | MediaCollection<Album>)[]> {
-  const target = artistIdOnSource(artist, source);
+  const target = artistListingSource(artist, source);
   if (!target) return [];
   return await api.getArtistAlbumsAndSeries(target.itemId, target.provider, {
     search: options.search,
@@ -68,29 +83,27 @@ export async function artistAlbumPageBySource(
   });
 }
 
-/** The artist's id on a source: its own for the library, a mapping's otherwise. */
-function artistIdOnSource(
-  artist: ItemMapping | Artist,
+export async function artistAlbumsCountBySource(
+  artist: Artist,
   source: RowSource,
-): { itemId: string; provider: string } | undefined {
-  if (source === "library" || artist.provider !== "library") {
-    return { itemId: artist.item_id, provider: artist.provider };
-  }
-  const mappings =
-    "provider_mappings" in artist ? artist.provider_mappings : [];
-  const mapping = mappings.find(
-    (candidate) => candidate.provider_instance === source,
+  albumTypes: AlbumType[],
+): Promise<number> {
+  const target = artistListingSource(artist, source);
+  if (!target) return 0;
+  return await api.getArtistAlbumsCount(
+    target.itemId,
+    target.provider,
+    undefined,
+    undefined,
+    albumTypes,
   );
-  return mapping
-    ? { itemId: mapping.item_id, provider: mapping.provider_instance }
-    : undefined;
 }
 
 /**
  * The releases of an artist from one source: the library, or a single
  * provider's own catalog.
  *
- * `source` follows a row registry's effectiveSource: "library" returns the
+ * `source` follows a row registry's resolveSource: "library" returns the
  * in-library albums, a provider instance id queries that provider with the
  * artist's id there, so an artist not mapped to it has no releases to show. A
  * provider (non-library) artist always comes from its own provider. A slim
@@ -101,6 +114,8 @@ export async function artistAlbumsBySource(
   source: RowSource,
   options?: ArtistAlbumsListingOptions,
 ): Promise<Album[]> {
+  const target = artistListingSource(artist, source);
+  if (!target) return [];
   const getAlbums = (itemId: string, provider: string) =>
     options
       ? api.getArtistAlbums(
@@ -116,8 +131,6 @@ export async function artistAlbumsBySource(
           options.favoritesOnly || undefined,
         )
       : api.getArtistAlbums(itemId, provider, undefined, undefined, 0);
-  const target = artistIdOnSource(artist, source);
-  if (!target) return [];
   return await getAlbums(target.itemId, target.provider);
 }
 
@@ -144,6 +157,18 @@ export async function loadArtistDiscography(
     offset,
     sortField,
     sortDirection,
+    albumTypes,
+  );
+}
+
+export async function loadArtistDiscographyCount(
+  artist: Artist,
+  albumTypes?: AlbumType[],
+): Promise<number> {
+  if (artist.provider !== "library") return 0;
+  return await api.getArtistDiscographyCount(
+    artist.item_id,
+    undefined,
     albumTypes,
   );
 }
@@ -176,6 +201,23 @@ export function artistProvidersForFeature(
   );
 }
 
+function artistListingSource(
+  artist: ItemMapping | Artist,
+  source: RowSource,
+): { itemId: string; provider: string } | undefined {
+  if (source === "library" || artist.provider !== "library") {
+    return { itemId: artist.item_id, provider: artist.provider };
+  }
+  const mappings =
+    "provider_mappings" in artist ? artist.provider_mappings : [];
+  const mapping = mappings.find(
+    (candidate) => candidate.provider_instance === source,
+  );
+  return mapping
+    ? { itemId: mapping.item_id, provider: mapping.provider_instance }
+    : undefined;
+}
+
 /**
  * The artist's tracks, optionally limited to a single provider: those in the
  * library for a library artist, its provider's own for a provider artist.
@@ -204,6 +246,10 @@ export async function loadArtistTracks(
   );
 }
 
+export async function loadArtistTracksCount(artist: Artist): Promise<number> {
+  return await api.getArtistTracksCount(artist.item_id, artist.provider);
+}
+
 /**
  * Albums the artist appears on without being an album artist, newest first.
  * All of them, or one page when a limit is given.
@@ -228,6 +274,13 @@ export async function loadArtistAppearsOn(
     sortField,
     sortDirection,
   );
+}
+
+export async function loadArtistAppearsOnCount(
+  artist: Artist,
+): Promise<number> {
+  if (artist.provider !== "library") return 0;
+  return await api.getArtistAppearsOnCount(artist.item_id, artist.provider);
 }
 
 /** The artist's most popular tracks, as reported by `source`. */

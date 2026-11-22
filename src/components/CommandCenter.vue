@@ -56,18 +56,34 @@
       >
         {{ $t("searchtype_all") }}
       </button>
-      <button
-        v-for="mediaType in SEARCHABLE_MEDIA_TYPES"
-        :key="mediaType"
-        type="button"
-        tabindex="-1"
-        class="command-center-chip"
-        :data-active="selectedMediaTypes[0] === mediaType"
-        @mousedown.prevent
-        @click="toggleMediaType(mediaType)"
-      >
-        {{ $t(mediaType + "s") }}
-      </button>
+      <template v-for="mediaType in SEARCHABLE_MEDIA_TYPES" :key="mediaType">
+        <button
+          type="button"
+          tabindex="-1"
+          class="command-center-chip"
+          :data-active="
+            selectedMediaTypes[0] === mediaType && !selectedArtistType
+          "
+          @mousedown.prevent
+          @click="toggleMediaType(mediaType)"
+        >
+          {{ $t(mediaType + "s") }}
+        </button>
+        <template v-if="mediaType === MediaType.ARTIST">
+          <button
+            v-for="artistType in supportedAudiobookArtistTypes"
+            :key="artistType"
+            type="button"
+            tabindex="-1"
+            class="command-center-chip"
+            :data-active="selectedArtistType === artistType"
+            @mousedown.prevent
+            @click="toggleArtistType(artistType)"
+          >
+            {{ $t(artistType + "s") }}
+          </button>
+        </template>
+      </template>
       <button
         type="button"
         tabindex="-1"
@@ -156,7 +172,7 @@
 
       <CommandGroup
         v-for="section in mediaSections"
-        :key="section.mediaType"
+        :key="section.key"
         :heading="section.title"
       >
         <CommandItem
@@ -237,7 +253,7 @@
           tabindex="-1"
           class="command-center-more"
           @mousedown.prevent
-          @click="revealMore(section.mediaType)"
+          @click="revealMore(section.key)"
         >
           {{ $t("show_more") }}
         </button>
@@ -252,6 +268,13 @@
       >
         <Spinner class="text-muted-foreground size-5" />
       </div>
+
+      <CommandCenterLiveSources
+        v-if="liveSourceResults.length"
+        :sources="liveSourceResults"
+        @start="onLiveSourceStart"
+        @menu="onLiveSourceMenu"
+      />
 
       <CommandGroup v-if="pageResults.length" :heading="$t('pages')">
         <CommandItem
@@ -316,6 +339,7 @@
 </template>
 
 <script setup lang="ts">
+import CommandCenterLiveSources from "@/components/CommandCenterLiveSources.vue";
 import CommandCenterShell from "@/components/CommandCenterShell.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
@@ -344,6 +368,11 @@ import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
+import {
+  openLiveSourceMenu,
+  startLiveSource,
+  useLiveSources,
+} from "@/composables/useLiveSources";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import {
   LIBRARY_SEARCH_TARGET,
@@ -352,16 +381,25 @@ import {
 } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
+  AUDIOBOOK_ARTIST_TYPES,
+  detailRoute,
+  isAuthorOrNarrator,
+} from "@/helpers/author_narrator";
+import { matchLiveSources } from "@/helpers/live_sources";
+import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
 import { getPlayerDisplayName, getPlayerName } from "@/helpers/players";
 import { getArtistsString } from "@/helpers/utils";
+import { api } from "@/plugins/api";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
+  ArtistType,
   MediaType,
   type MediaItemTypeOrItemMapping,
   type Player,
+  type PlayerSource,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -401,11 +439,13 @@ const isTouch = useMediaQuery("(hover: none)");
 
 const query = ref("");
 const selectedMediaTypes = ref<MediaType[]>([]);
+// set with an author/narrator chip, which filters the artist results to that type
+const selectedArtistType = ref<ArtistType>();
 const pagesOnly = ref(false);
 const filterRef = ref<InstanceType<typeof ListboxFilter>>();
 const listRef = ref<InstanceType<typeof CommandList>>();
 const revealSentinel = ref<HTMLElement>();
-const revealedPerType = ref<Partial<Record<MediaType, number>>>({});
+const revealedPerType = ref<Partial<Record<string, number>>>({});
 const revealedSingle = ref(RESULTS_SINGLE_PAGE);
 // the results scroll offset, kept so reopening returns to where you were
 const savedScrollTop = ref(0);
@@ -460,20 +500,40 @@ const singleType = computed(() =>
     : undefined,
 );
 
+const supportedAudiobookArtistTypes = computed(() =>
+  AUDIOBOOK_ARTIST_TYPES.filter((artistType) =>
+    Object.values(api.providers).some((provider) =>
+      provider.supported_artist_types.includes(artistType),
+    ),
+  ),
+);
+
 const toggleMediaType = function (mediaType: MediaType) {
   pagesOnly.value = false;
-  selectedMediaTypes.value =
-    selectedMediaTypes.value[0] === mediaType ? [] : [mediaType];
+  const active =
+    selectedMediaTypes.value[0] === mediaType && !selectedArtistType.value;
+  selectedArtistType.value = undefined;
+  selectedMediaTypes.value = active ? [] : [mediaType];
+};
+
+const toggleArtistType = function (artistType: ArtistType) {
+  pagesOnly.value = false;
+  const active = selectedArtistType.value === artistType;
+  selectedArtistType.value = active ? undefined : artistType;
+  selectedMediaTypes.value = active ? [] : [MediaType.ARTIST];
 };
 
 const selectAllScope = function () {
   pagesOnly.value = false;
+  selectedArtistType.value = undefined;
   selectedMediaTypes.value = [];
 };
 
 const togglePagesOnly = function () {
   pagesOnly.value = !pagesOnly.value;
-  if (pagesOnly.value) selectedMediaTypes.value = [];
+  if (!pagesOnly.value) return;
+  selectedArtistType.value = undefined;
+  selectedMediaTypes.value = [];
 };
 
 // search runs on demand (the button or the return key), not while typing
@@ -607,13 +667,19 @@ const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
   return `${item.media_type}:${item.name.toLowerCase()}:${version}:${artist}`;
 };
 
+// authors and narrators are artists, listed under their own heading
+const sectionKey = (item: MediaItemTypeOrItemMapping): string =>
+  isAuthorOrNarrator(item) && "artist_type" in item
+    ? item.artist_type
+    : item.media_type;
+
 const mediaSections = computed(() => {
   if (pagesOnly.value || !resultsMatchQuery.value) return [];
 
   const single = singleType.value;
   const mediaTypes = single ? [single] : SEARCHABLE_MEDIA_TYPES;
   const sections: {
-    mediaType: MediaType;
+    key: string;
     title: string;
     items: MediaItemTypeOrItemMapping[];
     hasMore: boolean;
@@ -633,16 +699,25 @@ const mediaSections = computed(() => {
       }
       items.push(item);
     }
-    if (!items.length) continue;
-    const revealed = single
-      ? revealedSingle.value
-      : (revealedPerType.value[mediaType] ?? RESULTS_PER_TYPE);
-    sections.push({
-      mediaType,
-      title: $t(mediaType + "s"),
-      items: items.slice(0, revealed),
-      hasMore: items.length > revealed,
-    });
+    const keys =
+      mediaType !== MediaType.ARTIST
+        ? [mediaType]
+        : single
+          ? [selectedArtistType.value ?? mediaType]
+          : [mediaType, ...AUDIOBOOK_ARTIST_TYPES];
+    for (const key of keys) {
+      const keyItems = items.filter((item) => sectionKey(item) === key);
+      if (!keyItems.length) continue;
+      const revealed = single
+        ? revealedSingle.value
+        : (revealedPerType.value[key] ?? RESULTS_PER_TYPE);
+      sections.push({
+        key,
+        title: $t(key + "s"),
+        items: keyItems.slice(0, revealed),
+        hasMore: keyItems.length > revealed,
+      });
+    }
   }
   return sections;
 });
@@ -651,11 +726,12 @@ const sectionsHaveMore = computed(() =>
   mediaSections.value.some((section) => section.hasMore),
 );
 
-const revealMore = function (mediaType: MediaType) {
+const revealMore = function (sectionKey: string) {
   revealedPerType.value = {
     ...revealedPerType.value,
-    [mediaType]:
-      (revealedPerType.value[mediaType] ?? RESULTS_PER_TYPE) + RESULTS_PER_TYPE,
+    [sectionKey]:
+      (revealedPerType.value[sectionKey] ?? RESULTS_PER_TYPE) +
+      RESULTS_PER_TYPE,
   };
 };
 
@@ -680,7 +756,7 @@ const showInputSpinner = computed(
 );
 
 const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {
-  const label = $t(item.media_type);
+  const label = $t(sectionKey(item));
   const artists =
     "artists" in item && item.artists.length
       ? getArtistsString(item.artists)
@@ -692,10 +768,7 @@ const onMediaSelect = function (item: MediaItemTypeOrItemMapping) {
   recordRecentSearch();
   close();
   store.showFullscreenPlayer = false;
-  router.push({
-    name: item.media_type,
-    params: { itemId: item.item_id, provider: item.provider },
-  });
+  router.push(detailRoute(item));
 };
 
 // item mappings may omit is_playable, so treat only an explicit false as
@@ -802,6 +875,38 @@ const selectPlayer = function (player: Player) {
   close();
 };
 
+// the list is only kept current while the window is open
+const { sources: liveSources } = useLiveSources(() =>
+  isOpen.value ? store.activePlayerId : undefined,
+);
+
+const liveSourceResults = computed(() => {
+  if (pagesOnly.value || selectedMediaTypes.value.length) return [];
+  return matchLiveSources(liveSources.value, query.value);
+});
+
+const onLiveSourceStart = function (source: PlayerSource) {
+  const playerId = store.activePlayerId;
+  if (!playerId) return;
+  recordRecentSearch();
+  close();
+  void startLiveSource(playerId, source);
+};
+
+const onLiveSourceMenu = function (source: PlayerSource, event: Event) {
+  recordRecentSearch();
+  const { x, y } = getEventPosition(event);
+  openLiveSourceMenu(source, store.activePlayerId, x, y);
+};
+
+// the matches shown while typing, before a search is run
+const hasLocalResults = computed(
+  () =>
+    pageResults.value.length > 0 ||
+    playerResults.value.length > 0 ||
+    liveSourceResults.value.length > 0,
+);
+
 const statusNote = computed(() => {
   const term = query.value.trim();
 
@@ -811,24 +916,16 @@ const statusNote = computed(() => {
   if (!term) return "";
   if (queryActive.value) {
     if (isSearching.value) return "";
-    // typed but not submitted: prompt to run the search, unless the live page
-    // and player matches already give something to show
+    // typed but not submitted: prompt to run the search, unless the live page,
+    // player and live source matches already give something to show
     if (!resultsMatchQuery.value) {
-      if (!pageResults.value.length && !playerResults.value.length)
-        return $t("command_center_press_enter");
-      return "";
+      return hasLocalResults.value ? "" : $t("command_center_press_enter");
     }
-    if (hasMediaResults.value) return "";
-    if (!pageResults.value.length && !playerResults.value.length)
-      return $t("no_content");
-    return "";
+    if (hasMediaResults.value || hasLocalResults.value) return "";
+    return $t("no_content");
   }
 
-  if (
-    !recentResults.value.length &&
-    !pageResults.value.length &&
-    !playerResults.value.length
-  )
+  if (!recentResults.value.length && !hasLocalResults.value)
     return $t("command_center_keep_typing");
   return "";
 });
@@ -885,6 +982,7 @@ watch(isOpen, (opened) => {
     // no-op search; the real fan-out then goes out once, after the flush
     search("");
     query.value = initialQuery.value;
+    selectedArtistType.value = undefined;
     selectedMediaTypes.value = [...initialMediaTypes.value];
     nextTick(runSearch);
     return;
@@ -904,6 +1002,7 @@ watch(
     [
       query.value,
       selectedMediaTypes.value.join(","),
+      selectedArtistType.value,
       pagesOnly.value,
       selectedProviders.value.join(","),
     ].join("|"),
@@ -914,12 +1013,16 @@ watch(
 );
 
 // highlight the first row as results land so a desktop enter opens the top
-// hit; on the mobile sheet on a touch screen the on-screen keyboard drives the
-// interaction — there is no enter contract there and the phantom highlight
-// would read as a selection nobody made
+// hit, including live sources that load after a reopen; on the mobile sheet on
+// a touch screen the on-screen keyboard drives the interaction — there is no
+// enter contract there and the phantom highlight would read as a selection
+// nobody made
 watch(
   () =>
-    mediaSections.value.map((section) => section.items[0]?.uri ?? "").join("|"),
+    [
+      ...mediaSections.value.map((section) => section.items[0]?.uri ?? ""),
+      liveSourceResults.value[0]?.id ?? "",
+    ].join("|"),
   async () => {
     if (store.isTouchscreen && store.mobileLayout) return;
     if (!isOpen.value || !queryActive.value) return;

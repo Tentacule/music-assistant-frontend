@@ -1,5 +1,5 @@
 <template>
-  <section class="artist-details">
+  <section ref="pageRoot" class="artist-details">
     <ArtistHero :item="itemDetails" @edit-rows="rowsEditorOpen = true" />
 
     <template v-if="itemDetails">
@@ -25,7 +25,7 @@
           :source-domain="topTracksSourceDisplay?.domain"
           :source-options="sourceOptions('top_tracks')"
           :source-value="topTracksSource"
-          :artist-track-count="artistTracks?.length"
+          :artist-track-count="artistTracksCount"
           :empty-message="$t('artist_row_empty')"
           @edit-rows="rowsEditorOpen = true"
           @select-source="(source) => selectRowSource('top_tracks', source)"
@@ -40,9 +40,10 @@
           :source-label="albumsSourceDisplay?.label"
           :source-domain="albumsSourceDisplay?.domain"
           :source-options="sourceOptions('albums')"
-          :source-value="albumsSource"
+          :source-value="albumsSelectedSource"
           :items="albumItems"
-          :view-all-to="listingRoute('albums')"
+          :view-all-to="listingRoute('albums', albumsSource)"
+          :item-count="albumsCount"
           :empty-message="albumsEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
@@ -59,9 +60,10 @@
           :source-label="singlesSourceDisplay?.label"
           :source-domain="singlesSourceDisplay?.domain"
           :source-options="sourceOptions('singles_eps')"
-          :source-value="singlesSource"
+          :source-value="singlesSelectedSource"
           :items="singleItems"
-          :view-all-to="listingRoute('singles')"
+          :view-all-to="listingRoute('singles', singlesSource)"
+          :item-count="singlesCount"
           :empty-message="singlesEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
@@ -75,6 +77,7 @@
           :meta="isPhone ? undefined : $t('appears_on_hint')"
           :items="appearsOnItems"
           :view-all-to="listingRoute('appears_on')"
+          :item-count="appearsOnCount"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         />
@@ -82,10 +85,11 @@
         <!-- discography (every release MusicBrainz lists, in the library or
              not), in two rows each showing the release types the user picked -->
         <ArtistDiscographyRow
-          v-else-if="isDiscographyRow(rowId) && isDiscographyRowShown(rowId)"
+          v-else-if="isDiscographyRow(rowId)"
           :row-id="rowId"
           :artist="itemDetails"
           :items="discographyRowItems[rowId]"
+          :item-count="discographyRowCounts[rowId]"
           :show-heading="showsDiscographyHeading(rowId)"
           :class="{
             'mb-[16px] max-[600px]:mb-[8px]': discographyContinuesBelow(rowId),
@@ -223,10 +227,16 @@ import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
-import { isAuthorOrNarrator } from "@/helpers/author_narrator";
+import {
+  AUDIOBOOK_ARTIST_LISTING_ROUTE,
+  AUDIOBOOK_ARTIST_ROUTE,
+  audiobookArtistRole,
+  isAuthorOrNarrator,
+} from "@/helpers/author_narrator";
 import { useArtistRowData } from "@/composables/useArtistRowData";
 import { useDiscographyRows } from "@/composables/useDiscographyRows";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
+import { useHistoryScrollRestore } from "@/composables/useHistoryScrollRestore";
 import { api } from "@/plugins/api";
 import {
   ArtistType,
@@ -240,17 +250,21 @@ import { authManager } from "@/plugins/auth";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { computed, ref, watch } from "vue";
-import type { RouteLocationRaw } from "vue-router";
+import { useRoute, useRouter, type RouteLocationRaw } from "vue-router";
 
 export interface Props {
   itemId: string;
   provider: string;
 }
 const props = defineProps<Props>();
+const route = useRoute();
+const router = useRouter();
 
 const itemDetails = ref<Artist>();
 const loading = ref(false);
 const rowsEditorOpen = ref(false);
+const pageRoot = ref<HTMLElement>();
+const scrollRestore = useHistoryScrollRestore(pageRoot);
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
@@ -274,16 +288,24 @@ const visibleRows = computed(() => {
 
 const {
   artistTracks,
+  artistTracksCount,
   topTracksItems,
   albumItems,
   singleItems,
+  albumsCount,
+  singlesCount,
   appearsOnItems,
+  appearsOnCount,
   discographyItems,
+  discographyCount,
   discographySecondItems,
+  discographySecondCount,
   similarArtistItems,
   albumsMeta,
   albumsSource,
   singlesSource,
+  albumsSelectedSource,
+  singlesSelectedSource,
   topTracksSource,
   similarArtistsSource,
   albumsSourceDisplay,
@@ -306,14 +328,24 @@ function selectRowSource(rowId: ArtistRowId, source: RowSource) {
 
 const {
   rowItems: discographyRowItems,
-  isShown: isDiscographyRowShown,
   showsHeading: showsDiscographyHeading,
   continuesBelow: discographyContinuesBelow,
   meta: discographyMeta,
-} = useDiscographyRows(visibleRows, {
-  discography: discographyItems,
-  discography_second: discographySecondItems,
-});
+} = useDiscographyRows(
+  visibleRows,
+  {
+    discography: discographyItems,
+    discography_second: discographySecondItems,
+  },
+  {
+    discography: discographyCount,
+    discography_second: discographySecondCount,
+  },
+);
+const discographyRowCounts = computed(() => ({
+  discography: discographyCount.value,
+  discography_second: discographySecondCount.value,
+}));
 
 // an empty release row explains the library case; from a provider source the
 // badge already names it, so a neutral line is enough
@@ -331,14 +363,15 @@ const singlesEmptyMessage = computed(() =>
 // how much each row currently holds, for the editor's per-row meta line (it
 // adds the source itself)
 const rowMeta = computed<Partial<Record<ArtistRowId, string>>>(() => ({
-  top_tracks: artistTracks.value?.length
-    ? topTracksMeta(artistTracks.value.length)
+  top_tracks: artistTracksCount.value
+    ? topTracksMeta(artistTracksCount.value)
     : undefined,
   albums: albumsMeta.value,
-  singles_eps: singleItems.value?.length
-    ? String(singleItems.value.length)
-    : undefined,
-  appears_on: $t("appears_on_hint"),
+  singles_eps: singlesCount.value ? String(singlesCount.value) : undefined,
+  appears_on:
+    appearsOnCount.value === undefined
+      ? $t("appears_on_hint")
+      : `${appearsOnCount.value} · ${$t("appears_on_hint")}`,
   discography: discographyMeta("discography"),
   discography_second: discographyMeta("discography_second"),
 }));
@@ -409,11 +442,24 @@ watch(
   { immediate: true },
 );
 
+// an author or narrator opened through a plain artist link moves to the
+// audiobooks section, so the navigation shows where the user is
+watch(itemDetails, (artist) => {
+  const role = artist && audiobookArtistRole(artist);
+  if (!role || route.name !== "artist") return;
+  router.replace({
+    name: AUDIOBOOK_ARTIST_ROUTE,
+    params: { ...route.params, role },
+    query: route.query,
+  });
+});
+
 // a new artist starts at the top of the page; anything else (a favorite
 // toggle, a metadata update) leaves the page where the user left it
 watch(
   () => itemDetails.value?.uri,
   () => {
+    if (scrollRestore.returning()) return;
     document.querySelector(".content-section")?.scrollTo({ top: 0 });
   },
 );
@@ -437,7 +483,7 @@ const loadArtistAudiobooks = async function (params: LoadDataParams) {
     providerMapping?.item_id ?? artist.item_id,
     providerMapping?.provider_instance ?? artist.provider,
     artist.artist_type,
-    undefined,
+    true,
     params.collapseCollections,
     params.search,
     params.limit,
@@ -524,16 +570,22 @@ function hasSourcePicker(rowId: ArtistRowId): boolean {
   return artistRows.sources(rowId, itemDetails.value).length > 1;
 }
 
-/** The "View all" target of a shelf. */
-function listingRoute(listing: string): RouteLocationRaw | undefined {
+/** The "View all" target of a shelf, opened on the source the shelf shows when it has one. */
+function listingRoute(
+  listing: string,
+  source?: RowSource,
+): RouteLocationRaw | undefined {
   if (!itemDetails.value) return undefined;
+  const params = {
+    provider: itemDetails.value.provider,
+    itemId: itemDetails.value.item_id,
+    listing,
+  };
+  const role = audiobookArtistRole(itemDetails.value);
   return {
-    name: "artistlisting",
-    params: {
-      provider: itemDetails.value.provider,
-      itemId: itemDetails.value.item_id,
-      listing,
-    },
+    name: role ? AUDIOBOOK_ARTIST_LISTING_ROUTE : "artistlisting",
+    params: role ? { ...params, role } : params,
+    query: source ? { source } : undefined,
   };
 }
 </script>
