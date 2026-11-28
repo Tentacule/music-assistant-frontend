@@ -16,7 +16,11 @@ const headerStubs = {
   CardTitle: SlotStub,
   DropdownMenu: SlotStub,
   DropdownMenuContent: SlotStub,
-  DropdownMenuItem: SlotStub,
+  DropdownMenuItem: {
+    name: "DropdownMenuItem",
+    props: ["disabled"],
+    template: "<div><slot /></div>",
+  },
   DropdownMenuTrigger: SlotStub,
 };
 
@@ -38,6 +42,16 @@ describe("SettingsHeaderCard", () => {
     expect(wrapper.emitted("resetToDefaults")).toHaveLength(1);
   });
 
+  it("keeps the reset out of reach while the screen asks for that", () => {
+    const resetDisabled = (props: Record<string, unknown>) =>
+      mountHeader(props)
+        .findComponent({ name: "DropdownMenuItem" })
+        .props("disabled");
+
+    expect(resetDisabled({})).toBe(false);
+    expect(resetDisabled({ resetDisabled: true })).toBe(true);
+  });
+
   it("links the documentation it is given", () => {
     const link = mountHeader({
       documentationUrl: "https://music-assistant.io/settings/core/",
@@ -52,6 +66,26 @@ describe("SettingsHeaderCard", () => {
   it("leaves out the documentation row without a link", () => {
     expect(
       mountHeader().find('[data-testid="settings-documentation"]').exists(),
+    ).toBe(false);
+  });
+
+  it("offers the documentation in the menu", () => {
+    const item = mountHeader({
+      documentationUrl: "https://music-assistant.io/settings/core/",
+    }).get('[data-testid="settings-documentation-item"]');
+
+    expect(item.attributes("href")).toBe(
+      "https://music-assistant.io/settings/core/",
+    );
+    expect(item.attributes("target")).toBe("_blank");
+    expect(item.attributes("rel")).toBe("noopener noreferrer");
+  });
+
+  it("leaves the documentation out of the menu without a link", () => {
+    expect(
+      mountHeader()
+        .find('[data-testid="settings-documentation-item"]')
+        .exists(),
     ).toBe(false);
   });
 });

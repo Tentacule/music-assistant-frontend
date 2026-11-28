@@ -1010,17 +1010,36 @@ export enum ProviderSharing {
   EVERYONE = "everyone",
 }
 
-export interface ProviderAccess {
-  // Who a music source serves: its owner and the users it is shared with.
-  // owner: user_id of the member the source belongs to; null = a household
-  // source managed by admins, and then sharing alone decides who may use it
+export enum SharedPlayback {
+  // When a shared account of a streaming service plays for others than its owner.
+  // only its owner plays from it
+  NEVER = "never",
+  // a user it is shared with who has no account of the service closer to them:
+  // one of their own comes before one shared with them by name, and that before
+  // one shared with all
+  WITHOUT_OWN = "without_own",
+  // as above, and also a user whose closer accounts are all busy
+  WHEN_BUSY = "when_busy",
+}
+
+export interface AccessRecord {
+  // Who a shareable object serves: its owner and the users it is shared with.
+  // owner: user_id of the member the object belongs to; null = managed by
+  // admins, and then sharing alone decides who may use it
   owner: string | null;
   sharing: ProviderSharing;
   // shared_users: only consulted with ProviderSharing.SELECTED
   shared_users: string[];
 }
 
-export interface PlaylistAccess extends ProviderAccess {
+export interface ProviderAccess extends AccessRecord {
+  // Who a music source serves: its owner and the users it is shared with.
+  // shared_playback: when the users it is shared with may play from it, only
+  // consulted for an account of a streaming service
+  shared_playback: SharedPlayback;
+}
+
+export interface PlaylistAccess extends AccessRecord {
   // Who a Music Assistant playlist serves: its owner, who may see it and who may edit it.
   // collaborative: everyone the playlist is shared with may also add and remove its
   // items; otherwise only the owner may
@@ -1636,6 +1655,9 @@ export interface PlayerQueue {
   overlay_volume: number;
   current_index: number | null;
   index_in_buffer: number | null;
+  // last_locked_index: the items up to and including this index are held by the player and
+  // can't be moved or removed (server-derived, read-only). Null while nothing is locked.
+  last_locked_index: number | null;
   // ended: whether the queue played all the way to its end and is waiting to be restarted
   // (server-derived, read-only). The position stays on the last item, so this flag is what
   // tells a finished queue apart from one that is merely stopped on that item. Pressing play
@@ -2046,6 +2068,8 @@ export interface CommunityProvider {
   state: CommunityProviderState;
   installed_version: string | null;
   latest_version: string | null;
+  // the version an update installs, whatever the state
+  update_version: string | null;
   // the version that becomes active at the next start of the server
   pending_version: string | null;
   // a version that failed to load here; installed again only when asked for by domain

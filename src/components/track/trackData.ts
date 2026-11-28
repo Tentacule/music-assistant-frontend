@@ -1,10 +1,10 @@
+import { LOSSLESS_CODECS } from "@/helpers/audioProcessing";
 import { parseLrcLine } from "@/helpers/lrcParser";
 import { getArtistsString, getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   AlbumType,
   ContentType,
-  ImageType,
   type Album,
   type Artist,
   type AudioFormat,
@@ -16,35 +16,6 @@ import { $t } from "@/plugins/i18n";
 
 // a line holding only an LRC ID tag, like "[ar: Artist]" or "[offset: 500]"
 const LRC_ID_TAG = /^\[[a-z]+:[^\]]*\]$/i;
-
-// the codecs the server counts as lossless (ContentType.is_lossless there)
-const LOSSLESS_CODECS = new Set<ContentType>([
-  ContentType.FLAC,
-  ContentType.ALAC,
-  ContentType.WAV,
-  ContentType.AIFF,
-  ContentType.DSF,
-  ContentType.WAVPACK,
-  ContentType.TAK,
-  ContentType.APE,
-  ContentType.TRUEHD,
-  ContentType.RA_144,
-  ContentType.PCM,
-  ContentType.PCM_S16LE,
-  ContentType.PCM_S24LE,
-  ContentType.PCM_S32LE,
-  ContentType.PCM_F32LE,
-  ContentType.PCM_F64LE,
-  ContentType.PCM_S16BE,
-  ContentType.PCM_S24BE,
-  ContentType.PCM_S32BE,
-  ContentType.PCM_BLURAY,
-  ContentType.PCM_DVD,
-  ContentType.DSD_LSBF,
-  ContentType.DSD_MSBF,
-  ContentType.DSD_LSBF_PLANAR,
-  ContentType.DSD_MSBF_PLANAR,
-]);
 
 /** All the albums the track appears on. */
 export async function loadTrackAlbums(track: Track): Promise<Album[]> {
@@ -153,29 +124,6 @@ export function trackReleaseYear(track: Track): number | undefined {
   if (track.album?.year) return track.album.year;
   const releaseDate = track.metadata?.release_date;
   return releaseDate ? new Date(releaseDate).getUTCFullYear() : undefined;
-}
-
-export interface TrackBackdrop {
-  // undefined when the track has no artwork at all
-  url?: string;
-  // the cover standing in for missing wide art, which the hero blurs so it
-  // reads as colour instead of a second copy of the artwork beside it
-  blurred: boolean;
-}
-
-/**
- * The artwork behind the track hero: wide art (fanart, then landscape) of the
- * track or its album, else of the given artist, else the cover to blur. No
- * size is passed, so the server serves the original image.
- */
-export function trackBackdrop(track: Track, artist?: Artist): TrackBackdrop {
-  const wide =
-    getImageThumbForItem(track, ImageType.FANART) ||
-    getImageThumbForItem(track, ImageType.LANDSCAPE) ||
-    getImageThumbForItem(artist, ImageType.FANART) ||
-    getImageThumbForItem(artist, ImageType.LANDSCAPE);
-  if (wide) return { url: wide, blurred: false };
-  return { url: getImageThumbForItem(track, ImageType.THUMB), blurred: true };
 }
 
 /** Whether the two tracks share a provider mapping, i.e. are the same recording. */

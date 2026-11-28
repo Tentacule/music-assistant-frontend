@@ -87,6 +87,8 @@ Object.assign(apiMock, {
   })),
   getDSPPresets: vi.fn(async () => []),
   subscribe: vi.fn(() => () => {}),
+  // the documentation link of the page depends on the server version
+  serverInfo: { value: undefined },
 });
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
@@ -203,6 +205,34 @@ describe("Settings breadcrumbs on the options of a player", () => {
       expect(trail.filter((item) => item.to)).toEqual([]);
     },
   );
+});
+
+describe("Settings breadcrumbs on the other settings pages of a player", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+  });
+
+  it.each([
+    ["editplayeroutputs", "settings.category.protocol_settings"],
+    ["editplayercontrols", "settings.category.player_controls"],
+  ])("lead from %s back to the settings of the player", (name, title) => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    routeState.name = name;
+
+    expect(playerOptionsTrail()).toEqual([
+      {
+        title: "settings.players",
+        disabled: false,
+        to: { name: "playersettings" },
+      },
+      {
+        title: "Kitchen",
+        disabled: false,
+        to: { name: "editplayer", params: { playerId: "kitchen" } },
+      },
+      { title, disabled: true },
+    ]);
+  });
 });
 
 /**
@@ -532,17 +562,17 @@ describe("Settings breadcrumbs on the pages below the players", () => {
     ]);
   });
 
+  it("hang Tap & play under the players", () => {
+    expect(pageTrail("tapandplaysettings")).toEqual([
+      players,
+      { title: "settings.tap_and_play.title", disabled: true },
+    ]);
+  });
+
   it("hang the player providers under the players", () => {
     expect(pageTrail("playerproviders")).toEqual([
       players,
       { title: "settings.playerproviders", disabled: true },
-    ]);
-  });
-
-  it("hang adding a group player under the players", () => {
-    expect(pageTrail("addgroup", { provider: "sonos--kitchen" })).toEqual([
-      players,
-      { title: "settings.add_group_player", disabled: true },
     ]);
   });
 
@@ -1127,7 +1157,8 @@ describe("the way back from the DSP settings of a player", () => {
     return wrapper;
   }
 
-  const stageOpen = () => wrapper!.find("h3").exists();
+  const stageOpen = () =>
+    wrapper!.find('[data-testid="dsp-editor"] h3').exists();
   const stagesShown = () =>
     wrapper!.find('[data-testid="dsp-stages"]').exists();
   const pressBack = () =>
