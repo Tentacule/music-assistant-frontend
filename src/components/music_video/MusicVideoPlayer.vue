@@ -76,19 +76,24 @@ const destroyHls = () => {
   hls = undefined;
 };
 
-/** Point the video element at a URL, through hls.js where the browser has no HLS. */
+/**
+ * Point the video element at a URL. HLS goes through hls.js wherever it works: a browser
+ * that claims native HLS (recent Chrome) may still fail on the MPEG-TS segments of a music
+ * service. Native HLS is only the fallback, for Safari on iOS.
+ */
 const attachSource = async (url: string, kind: MusicVideoSourceKind) => {
   const video = videoElement.value;
   if (!video) return;
   destroyHls();
   playbackError.value = false;
-  if (kind !== MusicVideoSourceKind.HLS || video.canPlayType(HLS_MIME_TYPE)) {
+  if (kind !== MusicVideoSourceKind.HLS) {
     video.src = url;
     return;
   }
   const { default: HlsPlayer } = await import("hls.js");
   if (!HlsPlayer.isSupported()) {
-    playbackError.value = true;
+    if (video.canPlayType(HLS_MIME_TYPE)) video.src = url;
+    else playbackError.value = true;
     return;
   }
   hls = new HlsPlayer();
