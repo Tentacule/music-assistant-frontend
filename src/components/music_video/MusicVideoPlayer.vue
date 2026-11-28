@@ -1,5 +1,10 @@
 <template>
-  <div class="relative flex h-full w-full items-center justify-center bg-black">
+  <div
+    ref="rootElement"
+    class="relative flex h-full w-full items-center justify-center bg-black"
+    :title="synced ? $t('music_video_fullscreen_hint') : undefined"
+    @dblclick="onDoubleClick"
+  >
     <video
       v-show="showVideo"
       ref="videoElement"
@@ -34,10 +39,12 @@ import {
   type MusicVideoRef,
 } from "@/composables/useMusicVideoSource";
 import { useMusicVideoSync } from "@/composables/useMusicVideoSync";
+import { useElementFullscreen } from "@/composables/useElementFullscreen";
+import { isMusicVideoFullscreenShortcut } from "@/helpers/music_video_fullscreen";
 import { MusicVideoSourceKind } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import type Hls from "hls.js";
-import { computed, onBeforeUnmount, ref, toRef, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, toRef, watch } from "vue";
 
 export interface Props {
   musicVideo?: MusicVideoRef;
@@ -52,6 +59,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const HLS_MIME_TYPE = "application/vnd.apple.mpegurl";
 
+const rootElement = ref<HTMLElement>();
 const videoElement = ref<HTMLVideoElement>();
 const playbackError = ref(false);
 const { info, failed } = useMusicVideoSource(toRef(props, "musicVideo"));
@@ -122,4 +130,19 @@ watch(
 );
 
 onBeforeUnmount(destroyHls);
+
+// the synced player goes full screen on a double click or F, and back on a
+// double click, F or Escape (which the browser handles); the preview keeps the
+// full screen button and double click of its native controls
+const { toggle: toggleFullscreen } = useElementFullscreen(rootElement);
+const onDoubleClick = () => {
+  if (props.synced) void toggleFullscreen();
+};
+const onKeydown = (event: KeyboardEvent) => {
+  if (!props.synced || !isMusicVideoFullscreenShortcut(event)) return;
+  event.preventDefault();
+  void toggleFullscreen();
+};
+onMounted(() => window.addEventListener("keydown", onKeydown));
+onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 </script>

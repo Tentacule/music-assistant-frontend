@@ -1445,7 +1445,9 @@ const onKeydown = (e: KeyboardEvent) => {
     e.key === "Escape" &&
     store.showFullscreenPlayer &&
     !store.dialogActive &&
-    !store.showPlayersMenu
+    !store.showPlayersMenu &&
+    // fork: Escape first takes a music video out of the browser's full screen
+    !document.fullscreenElement
   ) {
     store.showFullscreenPlayer = false;
   }

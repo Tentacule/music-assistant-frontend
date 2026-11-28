@@ -3107,6 +3107,7 @@
     "music_videos": "Music videos",
     "music_videos_of_artist": "More music videos of the artist",
     "music_video_player": "Music video",
+    "music_video_fullscreen_hint": "Double-click or press F for full screen, Escape to leave it",
     "music_video_preview": "Preview",
     "music_video_unavailable": "The video can not be shown",
     "music_video_codec_unsupported": "The browser can not play this video",
