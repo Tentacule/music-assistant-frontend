@@ -198,6 +198,8 @@ export enum MediaType {
   SOUND_EFFECT = "sound_effect",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
+  // fork: a music video (clip)
+  MUSIC_VIDEO = "music_video",
   COLLECTION = "collection",
   GENRE = "genre",
   GENRE_ALIAS = "genre_alias",
@@ -232,6 +234,9 @@ export enum ListingType {
   GENRE_ALBUMS = "genre_albums",
   ALBUM_SERIES = "album_series",
   BROWSE = "browse",
+  // fork: music videos
+  LIBRARY_MUSIC_VIDEOS = "library_music_videos",
+  ARTIST_MUSIC_VIDEOS = "artist_music_videos",
 }
 
 export enum SortField {
@@ -608,6 +613,11 @@ export enum ProviderFeature {
   ARTIST_TRACKS = "artist_tracks",
   ARTIST_TOPTRACKS = "artist_toptracks",
   ARTIST_TOPALBUMS = "artist_topalbums",
+  // fork: music videos
+  LIBRARY_MUSIC_VIDEOS = "library_music_videos",
+  LIBRARY_MUSIC_VIDEOS_EDIT = "library_music_videos_edit",
+  FAVORITE_MUSIC_VIDEOS_EDIT = "favorite_music_videos_edit",
+  ARTIST_MUSIC_VIDEOS = "artist_music_videos",
   AUTHOR_AUDIOBOOKS = "author_audiobooks",
   NARRATOR_AUDIOBOOKS = "narrator_audiobooks",
   // bookmarks of the user per mediatype: read, and add/rename/remove
@@ -1329,6 +1339,44 @@ export interface Track extends MediaItem {
   audio_metadata?: AudioMetadata | null;
 }
 
+// fork: a music video plays like a track: the player gets its audio, and the
+// client shows the picture muted, in sync with the player position
+export interface VideoMetadata {
+  width: number | null;
+  height: number | null;
+  video_codec: string | null;
+  container: string | null;
+  // false when a browser cannot play the video codec
+  web_playable: boolean;
+}
+
+export interface MusicVideo extends MediaItem {
+  duration: number;
+  artists: Array<ItemMapping | Artist>;
+  album?: ItemMapping | Album | null;
+  // the library track of the same recording
+  track?: ItemMapping | null;
+  // only populated when the full music video is requested, never on listings
+  video_metadata?: VideoMetadata | null;
+}
+
+export enum MusicVideoSourceKind {
+  // a file the browser seeks in with range requests
+  FILE = "file",
+  // a file remuxed on the fly: seek by asking again with ?start=<seconds>
+  REMUX = "remux",
+  // an HLS playlist
+  HLS = "hls",
+}
+
+export interface MusicVideoPlaybackInfo {
+  url: string;
+  kind: MusicVideoSourceKind;
+  seekable: boolean;
+  expires_at: number;
+  web_playable: boolean;
+}
+
 export interface Playlist extends MediaItem {
   owner: string;
   is_editable: boolean;
@@ -1482,12 +1530,13 @@ export type MediaItemType =
   | Audiobook
   | Podcast
   | PodcastEpisode
+  | MusicVideo
   | Genre
   | MediaCollection<MediaItemType>
   | BrowseFolder;
 
 export type PlayableMediaItemType =
-  Track | Radio | AudioSource | Audiobook | PodcastEpisode;
+  Track | Radio | AudioSource | Audiobook | PodcastEpisode | MusicVideo;
 export type MediaItemTypeOrItemMapping = MediaItemType | ItemMapping;
 
 export interface SearchResults {
@@ -1499,6 +1548,8 @@ export interface SearchResults {
   podcasts: Podcast[];
   audiobooks: Audiobook[];
   genres: Genre[];
+  // fork
+  music_videos?: MusicVideo[];
 }
 
 export interface AudioFormat {

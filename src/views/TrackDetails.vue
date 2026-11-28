@@ -4,6 +4,7 @@
       :item="itemDetails"
       :backdrop="backdrop.url"
       :blur-backdrop="backdrop.blurred"
+      :music-video="musicVideo"
       @edit-rows="rowsEditorOpen = true"
     />
 
@@ -105,6 +106,7 @@ import {
   MediaItemType,
   type Artist,
   type ItemMapping,
+  type MusicVideo,
   type Track,
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
@@ -199,6 +201,19 @@ const loadItemDetails = async function () {
     return;
   }
   itemDetails.value = track;
+  loadMusicVideo(track);
+};
+
+// fork: the music video linked to the track, which the hero offers to watch
+const musicVideo = ref<MusicVideo>();
+const loadMusicVideo = async function (track: Track) {
+  musicVideo.value = undefined;
+  try {
+    const videos = await api.getTrackMusicVideos(track.item_id, track.provider);
+    if (itemDetails.value?.uri === track.uri) musicVideo.value = videos[0];
+  } catch {
+    // the button only shows when a music video was found
+  }
 };
 
 watch(
@@ -258,7 +273,7 @@ function hasWideArt(track: Track): boolean {
 
 /** "Album · 2025": the album and year a version of the track was released on. */
 function versionSubtitle(item: MediaItemType | ItemMapping): string {
-  if (!("album" in item) || !item.album) return "";
+  if (!("track_number" in item) || !item.album) return "";
   const parts = [item.album.name];
   const year = trackReleaseYear(item);
   if (year) parts.push(String(year));

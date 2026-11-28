@@ -61,6 +61,8 @@ import {
   type SuccessResultMessage,
   type TaskSchedule,
   type LetterIndexEntry,
+  type MusicVideo,
+  type MusicVideoPlaybackInfo,
   type Track,
   type SortOptionInfo,
   type User,
@@ -739,6 +741,13 @@ export class MusicAssistantApi {
     favorite_only: boolean = false,
   ): Promise<number> {
     return this.sendCommand("music/radios/count", { favorite_only });
+  }
+
+  // fork: music videos
+  public getLibraryMusicVideosCount(
+    favorite_only: boolean = false,
+  ): Promise<number> {
+    return this.sendCommand("music/music_videos/count", { favorite_only });
   }
 
   public getLibraryPodcastsCount(
@@ -1674,6 +1683,94 @@ export class MusicAssistantApi {
       provider,
       genre,
       ...(random_seed === undefined ? {} : { random_seed }),
+    });
+  }
+
+  // fork: music videos
+  public getLibraryMusicVideos(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    provider?: string | string[],
+    random_seed?: number,
+  ): Promise<MusicVideo[]> {
+    return this.sendCommand("music/music_videos/library_items", {
+      favorite,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
+      provider,
+      ...(random_seed === undefined ? {} : { random_seed }),
+    });
+  }
+
+  public getMusicVideo(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<MusicVideo> {
+    return this.sendCommand("music/music_videos/get", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  /** The music videos of an artist: the library ones, then the providers' ones. */
+  public getArtistMusicVideos(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    in_library_only = false,
+  ): Promise<MusicVideo[]> {
+    return this.sendCommand("music/music_videos/by_artist", {
+      item_id,
+      provider_instance_id_or_domain,
+      in_library_only,
+    });
+  }
+
+  /** The library music videos linked to a track. */
+  public getTrackMusicVideos(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<MusicVideo[]> {
+    return this.sendCommand("music/music_videos/for_track", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  /** Where the client reads the picture of a music video, to show it muted. */
+  public getMusicVideoUrl(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<MusicVideoPlaybackInfo> {
+    return this.sendCommand("music/music_videos/video_url", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public setMusicVideoTrackLink(
+    item_id: string,
+    track_id: string,
+  ): Promise<MusicVideo> {
+    return this.sendCommand("music/music_videos/set_track_link", {
+      item_id,
+      track_id,
+    });
+  }
+
+  public removeMusicVideoTrackLink(
+    item_id: string,
+    track_id: string,
+  ): Promise<MusicVideo> {
+    return this.sendCommand("music/music_videos/remove_track_link", {
+      item_id,
+      track_id,
     });
   }
 

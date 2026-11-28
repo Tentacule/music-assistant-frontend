@@ -9,6 +9,7 @@ import { store } from "@/plugins/store";
 import {
   AudioLines,
   BookAudio,
+  Clapperboard,
   Compass,
   Disc3,
   Droplet,
@@ -141,6 +142,15 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     label: "tracks",
     icon: Music2,
     path: "/tracks",
+    isLibraryNode: true,
+    group: "library",
+  },
+  {
+    // fork: music videos
+    id: "music_videos",
+    label: "music_videos",
+    icon: Clapperboard,
+    path: "/music-videos",
     isLibraryNode: true,
     group: "library",
   },

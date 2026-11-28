@@ -403,6 +403,32 @@ export const routes: RouteRecordRaw[] = [
         ],
       },
       {
+        // fork: music videos
+        path: "/music-videos",
+        children: [
+          {
+            path: "",
+            name: "music_videos",
+            component: () =>
+              import(
+                /* webpackChunkName: "music_videos" */ "@/views/LibraryMusicVideos.vue"
+              ),
+            props: true,
+          },
+          {
+            // the name must stay equal to MediaType.MUSIC_VIDEO: navigation
+            // to a details view pushes the media type as the route name
+            path: ":provider/:itemId",
+            name: "music_video",
+            component: () =>
+              import(
+                /* webpackChunkName: "music_video" */ "@/views/MusicVideoDetails.vue"
+              ),
+            props: true,
+          },
+        ],
+      },
+      {
         path: "/playlists",
         children: [
           {

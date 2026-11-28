@@ -79,9 +79,16 @@
             v-if="$vuetify.display.height > 600"
             class="main-media-details-image"
           >
+            <!-- fork: the picture of a music video, in sync with the player -->
+            <MusicVideoPlayer
+              v-if="store.activePlayer?.powered != false && currentMusicVideo"
+              :music-video="currentMusicVideo"
+              :poster="currentMediaImageUrl"
+              synced
+            />
             <!-- current media image -->
             <v-img
-              v-if="
+              v-else-if="
                 store.activePlayer?.powered != false &&
                 store.activePlayer?.current_media?.image_url
               "
@@ -350,8 +357,14 @@
           class="main-queue-items"
         >
           <div class="main-media-details-image main-media-details-image-alt">
+            <MusicVideoPlayer
+              v-if="currentMusicVideo"
+              :music-video="currentMusicVideo"
+              :poster="currentMediaImageUrl"
+              synced
+            />
             <v-img
-              v-if="store.activePlayer?.current_media?.image_url"
+              v-else-if="store.activePlayer?.current_media?.image_url"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -507,6 +520,7 @@
 <script setup lang="ts">
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
+import MusicVideoPlayer from "@/components/music_video/MusicVideoPlayer.vue";
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
@@ -523,6 +537,7 @@ import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { playbackSpeedSupported } from "@/helpers/elapsed";
 import { expertModeSetting } from "@/helpers/expert_mode";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { queueItemMusicVideo } from "@/helpers/music_video";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { openExternalItem } from "@/helpers/open_external_item";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
@@ -602,6 +617,16 @@ import {
 import { useDisplay } from "vuetify";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
+
+// fork: the music video the active player plays, shown in place of the artwork
+const currentMusicVideo = computed(() =>
+  queueItemMusicVideo(store.curQueueItem),
+);
+const currentMediaImageUrl = computed(() =>
+  store.activePlayer?.current_media?.image_url
+    ? getMediaImageUrl(store.activePlayer.current_media.image_url)
+    : undefined,
+);
 
 const { name, mdAndUp } = useDisplay();
 const { showSkip } = useSkipControls();

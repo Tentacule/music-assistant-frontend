@@ -55,6 +55,7 @@ const MUSIC_ROWS: ArtistRowId[] = [
   "discography",
   "discography_second",
   "similar_artists",
+  "music_videos",
 ];
 
 function setPreferences(preferences: Record<string, unknown>) {
@@ -223,6 +224,7 @@ describe("artistRows", () => {
         "discography",
         "discography_second",
         "similar_artists",
+        "music_videos",
         "bio",
         "top_tracks",
       ]);
@@ -286,6 +288,7 @@ describe("artistRows", () => {
         "discography",
         "discography_second",
         "similar_artists",
+        "music_videos",
       ];
       await artistRows.setOrder(reordered, MUSIC_ROWS);
       expect(mockSetUserPreference).toHaveBeenLastCalledWith(

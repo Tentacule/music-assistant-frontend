@@ -73,6 +73,7 @@ const MEDIA_TYPE_PATH: Partial<Record<MediaType, string>> = {
   [MediaType.ARTIST]: "artists",
   [MediaType.ALBUM]: "albums",
   [MediaType.TRACK]: "tracks",
+  [MediaType.MUSIC_VIDEO]: "music-videos",
   [MediaType.RADIO]: "radios",
   [MediaType.PODCAST]: "podcasts",
   [MediaType.AUDIOBOOK]: "audiobooks",

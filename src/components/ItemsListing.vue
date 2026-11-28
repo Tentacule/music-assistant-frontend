@@ -954,6 +954,9 @@ const MEDIA_TYPE_BY_ITEMTYPE: Record<string, MediaType> = {
   radios: MediaType.RADIO,
   radioversions: MediaType.RADIO,
   genres: MediaType.GENRE,
+  // fork: music videos
+  musicvideos: MediaType.MUSIC_VIDEO,
+  artistmusicvideos: MediaType.MUSIC_VIDEO,
 };
 
 const MEDIA_TYPE_LABEL_KEYS: Partial<Record<MediaType, string>> = {

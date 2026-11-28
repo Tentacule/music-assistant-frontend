@@ -44,6 +44,12 @@
         :disabled="!radioSupported(item)"
         @click="gotoRadio(item)"
       />
+      <DetailHeroButton
+        v-if="musicVideo"
+        :icon="Clapperboard"
+        :label="$t('watch_music_video')"
+        @click="gotoMusicVideo(musicVideo)"
+      />
       <DetailHeroSourceBadge :item="item" />
       <!-- the same chrome as the hero buttons, for the facts that are not actions -->
       <span
@@ -86,9 +92,9 @@ import {
 } from "@/components/track/trackData";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatDuration } from "@/helpers/utils";
-import type { Track } from "@/plugins/api/interfaces";
+import type { MusicVideo, Track } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
-import { Disc, Music, Orbit } from "@lucide/vue";
+import { Clapperboard, Disc, Music, Orbit } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
@@ -98,6 +104,8 @@ export interface Props {
   backdrop?: string;
   // whether that artwork is the cover standing in for missing wide art
   blurBackdrop?: boolean;
+  // fork: the music video of the track's recording
+  musicVideo?: MusicVideo;
 }
 const props = defineProps<Props>();
 
@@ -129,6 +137,13 @@ const qualityLabel = computed(() => {
   const format = props.item && bestAudioFormat(props.item);
   return format ? audioFormatLabel(format) : undefined;
 });
+
+const gotoMusicVideo = function (video: MusicVideo) {
+  router.push({
+    name: "music_video",
+    params: { itemId: video.item_id, provider: video.provider },
+  });
+};
 
 const gotoItem = function (
   name: "artist" | "album",

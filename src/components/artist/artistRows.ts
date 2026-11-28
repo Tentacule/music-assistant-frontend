@@ -22,6 +22,7 @@ export type ArtistRowId =
   | "discography"
   | "discography_second"
   | "similar_artists"
+  | "music_videos" // fork
   | "audiobooks"
   | "audiobooks_all" // authors / narrators only
   | "provider_mappings"
@@ -73,6 +74,8 @@ export const ARTIST_ROWS: readonly ArtistRowDefinition[] = [
     audience: "music",
     supportsSource: true,
   },
+  // fork: the music videos of the artist, in the library and on its providers
+  { id: "music_videos", labelKey: "music_videos", audience: "music" },
   { id: "audiobooks", labelKey: "audiobooks", audience: "audiobook" },
   {
     id: "audiobooks_all",

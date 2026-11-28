@@ -115,6 +115,21 @@
           "
         />
 
+        <!-- fork: the music videos of the artist -->
+        <ItemsListing
+          v-else-if="rowId === 'music_videos' && !loading"
+          itemtype="artistmusicvideos"
+          :parent-item="itemDetails"
+          :show-provider="true"
+          :show-favorites-only-filter="false"
+          :show-track-number="false"
+          :show-count="false"
+          detail-row
+          :load-paged-data="loadArtistMusicVideos"
+          :title="$t('music_videos')"
+          :hide-on-empty="true"
+        />
+
         <!-- audiobooks in library (library authors/narrators only) -->
         <ItemsListing
           v-else-if="
@@ -469,6 +484,13 @@ useDetailItemUpdates(itemDetails, {
     return { ...props, mediaType: MediaType.ARTIST };
   },
 });
+
+// fork: the artist's music videos, capped by the server: one page
+const loadArtistMusicVideos = async function (params: LoadDataParams) {
+  const artist = itemDetails.value;
+  if (!artist || params.offset) return [];
+  return await api.getArtistMusicVideos(artist.item_id, artist.provider);
+};
 
 const loadArtistAudiobooks = async function (params: LoadDataParams) {
   const artist = itemDetails.value;

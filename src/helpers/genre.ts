@@ -1,5 +1,6 @@
 import {
   AudioLines,
+  Clapperboard,
   AudioWaveform,
   BookAudio,
   CircleHelp,
@@ -100,6 +101,7 @@ export const genreMediaTypeIconMap: Record<MediaType, Component> = {
   [MediaType.GENRE]: GenreIcon,
   [MediaType.GENRE_ALIAS]: Route,
   [MediaType.PODCAST_EPISODE]: Podcast,
+  [MediaType.MUSIC_VIDEO]: Clapperboard,
   [MediaType.FOLDER]: Folder,
   [MediaType.COLLECTION]: Library,
   [MediaType.UNKNOWN]: CircleHelp,

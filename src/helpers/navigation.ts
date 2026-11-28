@@ -58,6 +58,7 @@ const LISTING_ROUTES: Record<string, string | undefined> = {
   [AUDIOBOOK_ARTIST_LISTING_ROUTE]: "audiobooks",
   collection: "audiobooks",
   genre: "genres",
+  music_video: "music_videos", // fork
   playlist: "playlists",
   podcast: "podcasts",
   podcast_episode: "podcasts",
